@@ -80,7 +80,6 @@ class DreamerAgent:
     def save(self, path: str, step: int):
         from .config import ns_to_dict
         cfg_dict = ns_to_dict(self.cfg)
-        cfg_dict.pop("resume", None)
         torch.save({
             "step": step,
             "cfg": cfg_dict,

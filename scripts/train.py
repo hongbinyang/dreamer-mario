@@ -1,13 +1,18 @@
-"""Train Dreamer on Super Mario Bros.
+"""Train Dreamer on Super Mario Bros. Every run is identified by --name;
+running the same --name again automatically resumes it (same logdir, same
+config it was started with, continuous TensorBoard curve).
 
-    python scripts/train.py --config configs/default.yaml
-    python scripts/train.py --set train.total_steps=200000 --set env.grayscale=true
-    python scripts/train.py --resume runs/<name>/ckpt.pt
+    python scripts/train.py --name flag-run
+    python scripts/train.py --name flag-run --set env.grayscale=true
+    python scripts/train.py --name sparse-ablation --set env.sparse_reward=true
 
-Run from the repo root so the default --config path resolves.
+Ctrl-C any time; state is safe up to the last checkpoint (run.checkpoint_every
+steps). Re-run the same command to continue. Run from the repo root so the
+default --config path resolves. See docs/operations.md.
 """
 from __future__ import annotations
 
+import argparse
 import pathlib
 import sys
 import time
@@ -18,14 +23,35 @@ from torch.utils.tensorboard import SummaryWriter
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from dreamer.agent import DreamerAgent  # noqa: E402
-from dreamer.config import load_config, pick_device  # noqa: E402
+from dreamer.config import apply_overrides, dict_to_ns, load_yaml, pick_device  # noqa: E402
 from dreamer.envs.mario import make_env  # noqa: E402
 from dreamer.replay import ReplayBuffer  # noqa: E402
 from dreamer.utils import RunningMean  # noqa: E402
 
 
 def main():
-    cfg = load_config()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--name", required=True,
+                         help="run identifier; state lives in <run.logdir>/<name>/")
+    parser.add_argument("--config", default="configs/default.yaml")
+    parser.add_argument("--set", action="append", default=[],
+                         help="dotted.key=value overrides")
+    args = parser.parse_args()
+
+    # A fresh read of --config/--set tells us where runs live (run.logdir),
+    # which is all we need to check whether this name already has a
+    # checkpoint. If it does, the checkpoint's own embedded config (not this
+    # read) becomes the source of truth below — --set overrides still apply
+    # on top of it, so loop knobs like total_steps remain changeable, but
+    # model/env shape must match the original run or agent.load() will fail.
+    raw = load_yaml(args.config, args.set)
+    logdir = pathlib.Path(raw["run"]["logdir"]) / args.name
+    ckpt_path = logdir / "ckpt.pt"
+    resuming = ckpt_path.exists()
+    if resuming:
+        raw = apply_overrides(torch.load(ckpt_path, map_location="cpu")["cfg"], args.set)
+    cfg = dict_to_ns(raw)
+
     device = pick_device(cfg.run.device)
     torch.manual_seed(cfg.run.seed)
     np.random.seed(cfg.run.seed)
@@ -42,16 +68,17 @@ def main():
         seed=cfg.run.seed,
     )
 
-    run_name = time.strftime("%Y%m%d-%H%M%S")
-    logdir = pathlib.Path(cfg.run.logdir) / run_name
     logdir.mkdir(parents=True, exist_ok=True)
     writer = SummaryWriter(logdir)
-    print(f"logdir: {logdir}  (tensorboard --logdir {cfg.run.logdir})")
+    print(f"run: {args.name}  logdir: {logdir}")
 
     step = 0
-    if cfg.resume:
-        step = agent.load(cfg.resume)
-        print(f"resumed from {cfg.resume} at step {step}")
+    if resuming:
+        step = agent.load(str(ckpt_path))
+        print(f"resumed '{args.name}' at step {step}")
+    # The replay buffer itself is not checkpointed, so every resume goes
+    # through a fresh replay.prefill warm-up (random actions) before
+    # training resumes, same as a brand-new run.
 
     obs = env.reset()
     replay.add(obs, action=0, reward=0.0, is_first=True, is_terminal=False)

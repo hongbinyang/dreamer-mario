@@ -40,23 +40,29 @@ def _set_dotted(d: dict, key: str, value: str):
         node[parts[-1]] = value
 
 
+def apply_overrides(raw: dict, overrides: list[str]) -> dict:
+    """Apply a list of 'dotted.key=value' strings to a raw config dict, in place."""
+    for override in overrides:
+        key, value = override.split("=", 1)
+        _set_dotted(raw, key, value)
+    return raw
+
+
+def load_yaml(path: str, overrides: list[str] | None = None) -> dict:
+    with open(path) as f:
+        raw = yaml.safe_load(f)
+    return apply_overrides(raw, overrides or [])
+
+
 def load_config(argv: list[str] | None = None):
-    """Usage: python train.py --config configs/default.yaml \
+    """Usage: python evaluate.py --config configs/default.yaml \
                  --set train.total_steps=200000 --set env.grayscale=true"""
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default="configs/default.yaml")
     parser.add_argument("--set", action="append", default=[],
                         help="dotted.key=value overrides")
-    parser.add_argument("--resume", default=None, help="checkpoint path to resume")
     args = parser.parse_args(argv)
-    with open(args.config) as f:
-        raw = yaml.safe_load(f)
-    for override in args.set:
-        key, value = override.split("=", 1)
-        _set_dotted(raw, key, value)
-    cfg = _to_ns(raw)
-    cfg.resume = args.resume
-    return cfg
+    return _to_ns(load_yaml(args.config, args.set))
 
 
 def pick_device(name: str):

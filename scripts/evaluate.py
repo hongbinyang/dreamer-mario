@@ -30,7 +30,6 @@ def main():
     if "cfg" in ckpt:  # exact config the model was trained with
         from dreamer.config import dict_to_ns
         cfg = dict_to_ns(ckpt["cfg"])
-        cfg.resume = None
     else:
         cfg = load_config(["--config", args.config])
     device = pick_device(cfg.run.device)

@@ -11,6 +11,7 @@ dreamer-mario/
 │   └── default.yaml          every hyperparameter, M2-sized defaults
 ├── docs/
 │   ├── architecture.md        this file
+│   ├── operations.md          practical commands: training recipes, resuming, monitoring
 │   ├── training_pipeline.md   step-by-step collect → world model → imagination loop
 │   ├── design_world_model.md  why RSSM / discrete latents / symlog-twohot / KL balancing
 │   └── design_actor_critic.md why imagination-only, REINFORCE, return normalization, EMA critic
@@ -26,12 +27,14 @@ dreamer-mario/
 │       └── mario.py            gym-super-mario-bros wrapper: frame skip, resize, reward variants
 ├── scripts/                  entry points — run these, from the repo root
 │   ├── smoke_test.py           fast end-to-end sanity check (~1-2 min)
-│   ├── train.py                the main training loop
+│   ├── train.py                the main training loop; --name required, auto-resumes by name
+│   ├── dashboard.py            tensorboard wrapper for one or more named runs
+│   ├── cleanup.py              list / delete named runs under runs/
 │   ├── evaluate.py             greedy rollouts + gameplay video from a checkpoint
 │   └── dream.py                the real-vs-imagined showcase video
 ├── baselines/                 alternative algorithms for comparison, not part of Dreamer itself
 │   └── ppo_baseline.py         stable-baselines3 PPO on the identical env wrapper
-└── runs/                      training outputs (checkpoints, TensorBoard logs, GIFs) — gitignored
+└── runs/                      one subdirectory per --name: ckpt.pt, tfevents, GIFs — gitignored
 ```
 
 `dreamer/` is the reusable core: nothing in it parses CLI args, touches `sys.path`, or writes

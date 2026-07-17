@@ -8,6 +8,7 @@ Layout of the showcase video produced by `scripts/dream.py`:
 `[ real gameplay | the model's imagination | prediction error ]`
 
 **Docs:**
+[operations (how to actually run things)](docs/operations.md) ·
 [training pipeline](docs/training_pipeline.md) ·
 [world model design](docs/design_world_model.md) ·
 [actor-critic design](docs/design_actor_critic.md) ·
@@ -44,46 +45,30 @@ pip install "gym==0.25.2" "gym-super-mario-bros==7.4.0" "numpy<2" "torch>=2.2" \
 If you ever hit a "not implemented for MPS" error, run with:
 
 ```bash
-PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/train.py
+PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/train.py --name <name>
 ```
 
 All commands below assume you're running from the repo root (`dreamer-mario/`).
 
-## Train
+## Train, evaluate, dream
+
+Every run is identified by `--name` — it's required, and it's also how you resume: run the same
+`--name` again and it picks up where it left off (same directory, continuous TensorBoard curve).
+There's no separate "resume" command.
 
 ```bash
-python scripts/train.py                                   # full run, default config
-python scripts/train.py --set env.grayscale=true          # any config key is overridable
-python scripts/train.py --set env.sparse_reward=true      # the hard flag-only experiment
-python scripts/train.py --resume runs/<name>/ckpt.pt      # continue a run
-tensorboard --logdir runs                                 # curves + metrics
+python scripts/train.py --name flag-run
 ```
 
-Progress prints `best_x` (furthest x-position ever reached; the flag on 1-1
-is around x=3160) and `flags` (level completions). Open-loop prediction GIFs
-are written into the run directory as training progresses — watching the
-model's imagination sharpen over time is half the fun. See
-[docs/training_pipeline.md](docs/training_pipeline.md) for what actually
-happens inside each training step.
+See [docs/operations.md](docs/operations.md) for the full command reference: detached/overnight
+runs, speed/sample-efficiency tuning, monitoring (`scripts/dashboard.py`), deleting old runs
+(`scripts/cleanup.py`), evaluating a checkpoint, and generating the dream showcase video. See
+[docs/training_pipeline.md](docs/training_pipeline.md) for what actually happens inside each
+training step.
 
-**Expectations on an M2:** with the default small config, expect on the
-order of days (not hours) to reach reliable flag captures — plan overnight
-runs. Useful speed knobs: `train.train_every` (higher = faster wall-clock,
-less sample-efficient), `env.grayscale=true`, and `model.cnn_depth`/`deter`.
-Checkpoints save every 25k steps, so runs are resumable at any time.
-
-## Evaluate & dream
-
-```bash
-python scripts/evaluate.py --ckpt runs/<name>/ckpt.pt --episodes 5 --video eval.mp4
-python scripts/dream.py    --ckpt runs/<name>/ckpt.pt --out dream.mp4
-```
-
-`dream.py` is the showcase: the model watches 8 real frames, then predicts
-~56 frames (about 22 seconds of NES time at frame-skip 4) purely in latent
-space — Goombas, physics, scrolling and all — decoded back to pixels.
-Checkpoints embed their training config, so these scripts always rebuild
-the exact model that was trained.
+`scripts/dream.py` is the showcase: the model watches 8 real frames, then predicts ~56 frames
+(about 22 seconds of NES time at frame-skip 4) purely in latent space — Goombas, physics,
+scrolling and all — decoded back to pixels.
 
 ## PPO baseline (sample-efficiency comparison)
 
