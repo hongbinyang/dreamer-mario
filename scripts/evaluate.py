@@ -23,6 +23,8 @@ def main():
     parser.add_argument("--config", default="configs/default.yaml")
     parser.add_argument("--episodes", type=int, default=5)
     parser.add_argument("--video", default=None, help="save first episode to mp4")
+    parser.add_argument("--device", default=None,
+                         help="auto (default) | cpu | cuda[:N] | mps | tpu; overrides run.device")
     args = parser.parse_args()
 
     import torch
@@ -32,6 +34,8 @@ def main():
         cfg = dict_to_ns(ckpt["cfg"])
     else:
         cfg = load_config(["--config", args.config])
+    if args.device:
+        cfg.run.device = args.device
     device = pick_device(cfg.run.device)
     env = make_env(cfg)
     agent = DreamerAgent(env.num_actions, cfg, device)

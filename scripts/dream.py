@@ -32,6 +32,8 @@ def main():
     parser.add_argument("--context", type=int, default=8)
     parser.add_argument("--horizon", type=int, default=56)
     parser.add_argument("--upscale", type=int, default=4)
+    parser.add_argument("--device", default=None,
+                         help="auto (default) | cpu | cuda[:N] | mps | tpu; overrides run.device")
     args = parser.parse_args()
 
     import torch
@@ -41,6 +43,8 @@ def main():
         cfg = dict_to_ns(ckpt["cfg"])
     else:
         cfg = load_config(["--config", args.config])
+    if args.device:
+        cfg.run.device = args.device
     device = pick_device(cfg.run.device)
     env = make_env(cfg)
     agent = DreamerAgent(env.num_actions, cfg, device)

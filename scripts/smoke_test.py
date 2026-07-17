@@ -38,9 +38,13 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--no-env", action="store_true")
     parser.add_argument("--config", default="configs/default.yaml")
+    parser.add_argument("--device", default=None,
+                         help="auto (default) | cpu | cuda[:N] | mps | tpu; overrides run.device")
     args = parser.parse_args()
 
     cfg = load_config(["--config", args.config] + tiny_overrides())
+    if args.device:
+        cfg.run.device = args.device
     device = pick_device(cfg.run.device)
     print(f"device: {device}")
 

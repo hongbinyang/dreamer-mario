@@ -43,11 +43,8 @@ pip install "gym==0.25.2" "gym-super-mario-bros==7.4.0" "numpy<2" "torch>=2.2" \
   opencv-python pyyaml tensorboard imageio imageio-ffmpeg
 ```
 
-If you ever hit a "not implemented for MPS" error, run with:
-
-```bash
-PYTORCH_ENABLE_MPS_FALLBACK=1 python scripts/train.py --name <name>
-```
+Device selection (CPU/CUDA/MPS/TPU) is automatic and MPS's CPU-op-fallback is enabled by default —
+see [docs/operations.md](docs/operations.md#choosing-a-device) if you need to override it.
 
 All commands below assume you're running from the repo root (`dreamer-mario/`).
 

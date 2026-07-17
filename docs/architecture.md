@@ -12,6 +12,7 @@ dreamer-mario/
 ├── configs/
 │   └── default.yaml          every hyperparameter, M2-sized defaults
 ├── tests/                    pytest unit tests for the pure/deterministic layer — see operations.md
+│   ├── test_config.py          pick_device: auto-detect priority, MPS fallback, TPU error path
 │   ├── test_utils.py           symlog/twohot round-trip, lambda_return, return normalization
 │   ├── test_replay.py          ring-buffer wraparound and temporal contiguity
 │   ├── test_rssm.py            unimix floor, KL free bits, KL-balancing stop-gradient placement
@@ -24,7 +25,7 @@ dreamer-mario/
 │   ├── design_world_model.md  why RSSM / discrete latents / symlog-twohot / KL balancing
 │   └── design_actor_critic.md why imagination-only, REINFORCE, return normalization, EMA critic
 ├── dreamer/                  the algorithm — importable package, no side effects on import
-│   ├── config.py              YAML + dotted-key CLI override loader
+│   ├── config.py              YAML + dotted-key CLI override loader; pick_device (cpu/cuda/mps/tpu)
 │   ├── networks.py            CNN encoder/decoder, MLP heads (twohot, Bernoulli, actor)
 │   ├── rssm.py                 the recurrent state-space model: prior, posterior, imagination, KL
 │   ├── world_model.py          encoder + RSSM + heads wired together, joint loss, video_pred

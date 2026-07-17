@@ -36,6 +36,9 @@ def main():
     parser.add_argument("--config", default="configs/default.yaml")
     parser.add_argument("--set", action="append", default=[],
                          help="dotted.key=value overrides")
+    parser.add_argument("--device", default=None,
+                         help="auto (default) | cpu | cuda[:N] | mps | tpu; "
+                              "overrides run.device, safe to change on resume")
     args = parser.parse_args()
 
     # A fresh read of --config/--set tells us where runs live (run.logdir),
@@ -51,6 +54,8 @@ def main():
     if resuming:
         raw = apply_overrides(torch.load(ckpt_path, map_location="cpu")["cfg"], args.set)
     cfg = dict_to_ns(raw)
+    if args.device:
+        cfg.run.device = args.device
 
     device = pick_device(cfg.run.device)
     torch.manual_seed(cfg.run.seed)

@@ -65,12 +65,51 @@ def load_config(argv: list[str] | None = None):
     return _to_ns(load_yaml(args.config, args.set))
 
 
+def _xla_device(required: bool):
+    """TPU support via torch_xla (https://github.com/pytorch/xla) -- an
+    optional, separately-installed package, never a hard dependency of this
+    project. Untested on real TPU hardware: this repo was developed
+    entirely on Apple Silicon/MPS. If training doesn't actually speed up on
+    a TPU, the likely culprit is dreamer/rssm.py's `imagine()`, a plain
+    Python loop; XLA's lazy tracing may need explicit xm.mark_step() calls
+    per iteration to compile well."""
+    try:
+        import torch_xla.core.xla_model as xm
+    except ImportError:
+        if required:
+            raise ImportError(
+                "--device tpu requires torch_xla, which isn't installed. "
+                "See https://github.com/pytorch/xla for setup instructions."
+            ) from None
+        return None
+    return xm.xla_device()
+
+
 def pick_device(name: str):
+    """name: 'auto' | 'cpu' | 'cuda'[:N] | 'mps' | 'tpu'.
+
+    'auto' probes accelerators in order (cuda, mps, tpu) and falls back to
+    cpu. Anything else is passed straight to torch.device(), so e.g.
+    'cuda:1' for a specific GPU still works.
+    """
+    import os
     import torch
-    if name != "auto":
-        return torch.device(name)
-    if torch.backends.mps.is_available():
-        return torch.device("mps")
-    if torch.cuda.is_available():
-        return torch.device("cuda")
-    return torch.device("cpu")
+
+    if name == "tpu":
+        device = _xla_device(required=True)
+    elif name == "auto":
+        if torch.cuda.is_available():
+            device = torch.device("cuda")
+        elif torch.backends.mps.is_available():
+            device = torch.device("mps")
+        else:
+            device = _xla_device(required=False) or torch.device("cpu")
+    else:
+        device = torch.device(name)
+
+    if device.type == "mps":
+        # Not every op is implemented on MPS yet; fall back to CPU for just
+        # those instead of crashing. setdefault so an explicit "0" set
+        # beforehand (to get hard failures while debugging) isn't clobbered.
+        os.environ.setdefault("PYTORCH_ENABLE_MPS_FALLBACK", "1")
+    return device

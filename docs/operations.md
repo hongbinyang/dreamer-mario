@@ -18,6 +18,39 @@ deliberately does *not* try to test is "does the agent learn to beat Mario" — 
 horizon statistical property of a real training run, not a unit-testable one; `smoke_test.py` and
 real runs (watched via `scripts/dashboard.py`) are what validate that.
 
+## Choosing a device
+
+Every script (`train.py`, `evaluate.py`, `dream.py`, `smoke_test.py`) takes the same `--device`
+flag, overriding `run.device` from the config:
+
+```bash
+python scripts/train.py --name flag-run                    # auto-detect (default)
+python scripts/train.py --name flag-run --device cpu        # force CPU
+python scripts/train.py --name flag-run --device cuda:1     # a specific GPU
+python scripts/train.py --name flag-run --device mps        # force Apple Silicon GPU
+python scripts/train.py --name flag-run --device tpu        # requires torch_xla, see below
+```
+
+`auto` (the default) probes in order: **CUDA → MPS → TPU → CPU**, taking the first one available.
+Unlike `model.*`/`env.*`, changing `--device` between runs is always safe, including on resume —
+checkpoints are just tensors, `agent.load()` moves them onto whatever device you ask for.
+
+**MPS ops fallback is automatic.** Not every PyTorch op is implemented on Apple's MPS backend yet;
+`pick_device()` sets `PYTORCH_ENABLE_MPS_FALLBACK=1` itself whenever the resolved device is MPS, so
+unsupported ops silently run on CPU instead of crashing. You don't need to set this env var by
+hand anymore — it's only worth setting it explicitly to `0` yourself if you want a hard failure
+instead, e.g. while tracking down exactly which op isn't supported.
+
+**TPU support (`--device tpu` or auto-detected under `auto`) is untested.** It's wired up via the
+optional [`torch_xla`](https://github.com/pytorch/xla) package (never a hard dependency — nothing
+else in this project requires it, and it isn't installed by `environment.yml`/`requirements.txt`).
+This repo was developed entirely on Apple Silicon/MPS, so if you try it on real TPU hardware and
+training doesn't actually speed up, the likely culprit is [dreamer/rssm.py](../dreamer/rssm.py)'s
+`imagine()` — a plain Python loop over the imagination horizon. XLA's lazy tracing generally wants
+explicit `xm.mark_step()` calls per iteration to compile well; without them it may still run
+correctly, just without the performance TPUs are for. Treat this as a starting point, not a
+verified fast path.
+
 ## Every run has a name — that's the whole model
 
 `--name` is required for training, and it's the only thing that identifies a run. There is no
