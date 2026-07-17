@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+
+# Training outputs (checkpoints, logs, videos) — large binaries, regenerable
+runs/
+*.pt
+*.pth
+*.mp4
+*.gif
+
+# OS
+.DS_Store
+
+# Local Claude Code permissions (machine-specific)
+.claude/settings.local.json

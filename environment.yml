@@ -1,0 +1,22 @@
+name: dreamer-mario
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11        # nes-py needs <=3.11; do not use 3.12
+  - pip
+  - pip:
+      # --- the pins that matter (old Gym API stack) ---
+      - gym==0.25.2                  # last version compatible with nes-py wrappers
+      - gym-super-mario-bros==7.4.0
+      - nes-py==8.2.1                # compiles a small C++ extension (fine on arm64)
+      - "numpy<2"                    # gym 0.25 uses APIs removed in numpy 2
+      # --- everything else ---
+      - torch>=2.2                   # MPS backend on Apple Silicon
+      - opencv-python
+      - pyyaml
+      - tensorboard
+      - imageio
+      - imageio-ffmpeg               # mp4 output for dream.py / evaluate.py
+      # optional, only for the PPO baseline:
+      # - stable-baselines3
+      # - gymnasium

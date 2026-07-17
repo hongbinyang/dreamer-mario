@@ -1,0 +1,53 @@
+# DreamerV3-small-ish config, sized for a MacBook Pro M2 (MPS).
+# Every knob you might want to touch lives here.
+
+env:
+  id: SuperMarioBros-1-1-v0
+  action_set: right_only      # right_only (5 actions) | simple (7 actions)
+  frame_skip: 4
+  size: 64
+  grayscale: false
+  sparse_reward: false        # true = flag-only reward (the hard A/B experiment)
+
+model:
+  cnn_depth: 32               # encoder/decoder base channels
+  deter: 512                  # GRU deterministic state size
+  stoch: 32                   # number of categorical latent groups
+  classes: 32                 # classes per group
+  hidden: 512                 # MLP width
+  head_layers: 2
+  num_bins: 255               # twohot bins for reward/value
+  unimix: 0.01
+
+replay:
+  capacity: 200000            # steps; 200k * 64*64*3 uint8 ~= 2.3 GB RAM
+  batch_size: 16
+  seq_len: 64
+  prefill: 5000               # random steps before training starts
+
+train:
+  total_steps: 1000000        # env steps (after frame skip)
+  train_every: 16             # gradient step every N env steps
+  model_lr: 1.0e-4
+  ac_lr: 3.0e-5
+  model_grad_clip: 1000.0
+  ac_grad_clip: 100.0
+  free_bits: 1.0
+  beta_dyn: 0.5
+  beta_rep: 0.1
+  imag_horizon: 15
+  gamma: 0.997
+  lam: 0.95
+  entropy_coef: 3.0e-4
+  retnorm_decay: 0.99
+  slow_critic_decay: 0.98
+  slow_critic_reg: 1.0
+
+run:
+  device: auto                # auto | mps | cuda | cpu
+  seed: 0
+  logdir: runs
+  log_every: 500              # env steps between metric logs
+  video_every: 20000          # env steps between open-loop pred videos
+  checkpoint_every: 25000
+  eval_episodes: 3

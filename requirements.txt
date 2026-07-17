@@ -1,0 +1,14 @@
+# Python 3.10 or 3.11 required (nes-py does not support 3.12).
+gym==0.25.2
+gym-super-mario-bros==7.4.0
+nes-py==8.2.1
+numpy<2
+torch>=2.2
+opencv-python
+pyyaml
+tensorboard
+imageio
+imageio-ffmpeg
+# Optional, PPO baseline only:
+# stable-baselines3
+# gymnasium
