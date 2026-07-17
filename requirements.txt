@@ -9,6 +9,7 @@ pyyaml
 tensorboard
 imageio
 imageio-ffmpeg
+pytest
 # Optional, PPO baseline only:
 # stable-baselines3
 # gymnasium

@@ -7,8 +7,16 @@ dreamer-mario/
 ├── README.md                setup, run commands, entry point for new readers
 ├── environment.yml           conda env spec (pinned versions that matter — see README)
 ├── requirements.txt          same pins, for pip-only installs
+├── pytest.ini                 points pytest at tests/
+├── conftest.py                 puts the repo root on sys.path so `import dreamer` works in tests
 ├── configs/
 │   └── default.yaml          every hyperparameter, M2-sized defaults
+├── tests/                    pytest unit tests for the pure/deterministic layer — see operations.md
+│   ├── test_utils.py           symlog/twohot round-trip, lambda_return, return normalization
+│   ├── test_replay.py          ring-buffer wraparound and temporal contiguity
+│   ├── test_rssm.py            unimix floor, KL free bits, KL-balancing stop-gradient placement
+│   ├── test_actor_critic.py    actor/critic/world-model gradient isolation, slow-critic EMA
+│   └── test_networks.py        shape and zero-init checks for the network heads
 ├── docs/
 │   ├── architecture.md        this file
 │   ├── operations.md          practical commands: training recipes, resuming, monitoring

@@ -17,6 +17,7 @@ dependencies:
       - tensorboard
       - imageio
       - imageio-ffmpeg               # mp4 output for dream.py / evaluate.py
+      - pytest
       # optional, only for the PPO baseline:
       # - stable-baselines3
       # - gymnasium

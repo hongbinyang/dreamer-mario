@@ -20,6 +20,7 @@ Layout of the showcase video produced by `scripts/dream.py`:
 cd dreamer-mario
 conda env create -f environment.yml
 conda activate dreamer-mario
+python -m pytest                # ~1-2 sec, pure unit tests
 python scripts/smoke_test.py    # ~1-2 min; must print ALL SMOKE TESTS PASSED
 ```
 
