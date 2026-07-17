@@ -183,3 +183,63 @@ python baselines/ppo_baseline.py --steps 1000000
 
 (Not part of the named-run system above — it's a separate script with its own `runs_ppo/`
 output directory, for comparison purposes only.)
+
+## Command-line options
+
+Full reference for every flag on every script. The recipes above show these in context; this is
+the exhaustive lookup table.
+
+### `scripts/train.py`
+
+| Flag | Default | Meaning |
+|---|---|---|
+| `--name` | *(required)* | Run identifier; state lives in `<run.logdir>/<name>/`. Re-running the same name resumes it — see "Every run has a name" above. |
+| `--config` | `configs/default.yaml` | YAML config for a fresh run. On resume, only its `run.logdir` value is used (to find the checkpoint); everything else comes from the checkpoint's own embedded config instead. |
+| `--set KEY=VALUE` | *(none; repeatable)* | Dotted-key override, e.g. `--set train.total_steps=200000`. Repeat the flag for multiple overrides. Applied on top of `--config` (fresh run) or the checkpoint's config (resume). |
+| `--device` | `None` (→ config's `run.device`, i.e. `auto`) | `auto` \| `cpu` \| `cuda[:N]` \| `mps` \| `tpu`. See "Choosing a device" above. |
+
+### `scripts/evaluate.py`
+
+| Flag | Default | Meaning |
+|---|---|---|
+| `--ckpt` | *(required)* | Path to a `ckpt.pt` to evaluate. |
+| `--config` | `configs/default.yaml` | Fallback only, used if the checkpoint has no embedded config. |
+| `--episodes` | `5` | Number of greedy evaluation episodes to run. |
+| `--video` | `None` | If set, save the first episode's real gameplay to this path (e.g. `eval.mp4`). |
+| `--device` | `None` | Same as `train.py`. |
+
+### `scripts/dream.py`
+
+| Flag | Default | Meaning |
+|---|---|---|
+| `--ckpt` | *(required)* | Checkpoint to dream from. |
+| `--config` | `configs/default.yaml` | Fallback only, same as `evaluate.py`. |
+| `--out` | `dream.mp4` | Output video path. |
+| `--context` | `8` | Real frames the model watches before it starts imagining. |
+| `--horizon` | `56` | Frames to imagine after the context window. |
+| `--upscale` | `4` | Integer upscale factor for the output video (64×64 is tiny otherwise). |
+| `--device` | `None` | Same as `train.py`. |
+
+### `scripts/smoke_test.py`
+
+| Flag | Default | Meaning |
+|---|---|---|
+| `--no-env` | `False` | Skip the real NES emulator; use synthetic random frames instead. |
+| `--config` | `configs/default.yaml` | Base config — `tiny_overrides()` always shrinks the model/replay dims and `imag_horizon` on top, for speed. |
+| `--device` | `None` | Same as `train.py`. |
+
+### `scripts/dashboard.py`
+
+| Flag | Default | Meaning |
+|---|---|---|
+| `--name` | *(required; repeatable)* | Run name(s) under `runs/` to show. Pass it more than once to compare runs side by side. |
+| `--logdir` | `runs` | Parent directory runs live under. |
+
+### `scripts/cleanup.py`
+
+| Flag | Default | Meaning |
+|---|---|---|
+| `--list` | `False` | List all runs with step reached and disk size. Also the default action if `--name` isn't given. |
+| `--name` | *(none; repeatable)* | Run name(s) to delete. |
+| `--yes` | `False` | Actually delete. Without it, prints what *would* be deleted (dry-run). |
+| `--logdir` | `runs` | Parent directory runs live under. |
