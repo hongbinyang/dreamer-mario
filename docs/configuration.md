@@ -110,4 +110,4 @@ these particular choices (discrete categorical latents, unimix, etc.).
 | `logdir` | `runs` | Parent directory all named runs live under. Used to *locate* an existing checkpoint by `--name`, so it needs to stay consistent with wherever the run's files actually are — not a shape/learning concern, just a "point at the right place" one. |
 | `log_every` | `500` | Env steps between TensorBoard scalar logs. |
 | `video_every` | `20000` | Env steps between open-loop prediction GIFs — these accumulate (unique filename per step), unlike the checkpoint. |
-| `checkpoint_every` | `25000` | Env steps between checkpoint saves. Always overwrites the same `ckpt.pt`. |
+| `checkpoint_every` | `25000` | Env steps between checkpoint saves. Always overwrites the same `ckpt.pt`, atomically (temp file + rename) — an interrupt mid-save can't corrupt it. |

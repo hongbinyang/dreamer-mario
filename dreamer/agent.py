@@ -78,8 +78,16 @@ class DreamerAgent:
 
     # ------------------------------------------------------------ save/load
     def save(self, path: str, step: int):
+        """Writes to a temp file in the same directory, then atomically
+        renames it into place -- so a checkpoint on disk is either the
+        previous complete one or the new complete one, never a partial
+        write (e.g. from a Ctrl-C landing mid-save)."""
+        import pathlib
+
         from .config import ns_to_dict
         cfg_dict = ns_to_dict(self.cfg)
+        path = pathlib.Path(path)
+        tmp_path = path.with_suffix(path.suffix + ".tmp")
         torch.save({
             "step": step,
             "cfg": cfg_dict,
@@ -89,7 +97,8 @@ class DreamerAgent:
             "wm_opt": self.wm_opt.state_dict(),
             "actor_opt": self.actor_opt.state_dict(),
             "critic_opt": self.critic_opt.state_dict(),
-        }, path)
+        }, tmp_path)
+        tmp_path.replace(path)  # atomic on the same filesystem (POSIX and Windows)
 
     def load(self, path: str) -> int:
         ckpt = torch.load(path, map_location=self.device)

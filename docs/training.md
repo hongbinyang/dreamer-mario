@@ -25,7 +25,10 @@ python scripts/train.py --name flag-run
   mismatch (a safe, loud failure, not silent corruption).
 
 Ctrl-C any time — state is safe up to the last checkpoint (`run.checkpoint_every`, default
-25000 steps). Just re-run the same `--name` command to continue.
+25000 steps). Just re-run the same `--name` command to continue. `agent.save()` writes to a temp
+file and atomically renames it into place, so even an interrupt landing mid-save can't leave a
+corrupt `ckpt.pt` — the file on disk is always either the previous complete checkpoint or the new
+one, never a partial write.
 
 **One caveat**: the replay buffer itself is not checkpointed, only model/optimizer weights and
 the step counter. So every resume goes through a fresh `replay.prefill` (5000 steps by default)
