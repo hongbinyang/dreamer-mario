@@ -1,6 +1,7 @@
 """Evaluate a trained agent.
 
-    python scripts/evaluate.py --ckpt runs/<name>/ckpt.pt --episodes 5 --video eval.mp4
+    python scripts/evaluate.py --name flag-run --episodes 5 --video eval.mp4
+    python scripts/evaluate.py --ckpt runs/flag-run/ckpt.pt --episodes 5   # equivalent
 """
 from __future__ import annotations
 
@@ -19,16 +20,20 @@ from dreamer.envs.mario import make_env  # noqa: E402
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--ckpt", required=True)
+    which = parser.add_mutually_exclusive_group(required=True)
+    which.add_argument("--name", help="run name under --logdir; resolves to <logdir>/<name>/ckpt.pt")
+    which.add_argument("--ckpt", help="explicit checkpoint path")
+    parser.add_argument("--logdir", default="runs", help="parent directory runs live under (with --name)")
     parser.add_argument("--config", default="configs/default.yaml")
     parser.add_argument("--episodes", type=int, default=5)
     parser.add_argument("--video", default=None, help="save first episode to mp4")
     parser.add_argument("--device", default=None,
                          help="auto (default) | cpu | cuda[:N] | mps | tpu; overrides run.device")
     args = parser.parse_args()
+    ckpt_path = args.ckpt or str(pathlib.Path(args.logdir) / args.name / "ckpt.pt")
 
     import torch
-    ckpt = torch.load(args.ckpt, map_location="cpu")
+    ckpt = torch.load(ckpt_path, map_location="cpu")
     if "cfg" in ckpt:  # exact config the model was trained with
         from dreamer.config import dict_to_ns
         cfg = dict_to_ns(ckpt["cfg"])
@@ -39,7 +44,7 @@ def main():
     device = pick_device(cfg.run.device)
     env = make_env(cfg)
     agent = DreamerAgent(env.num_actions, cfg, device)
-    agent.load(args.ckpt)
+    agent.load(ckpt_path)
 
     returns, xs, flags = [], [], 0
     frames = []

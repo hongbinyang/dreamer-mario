@@ -9,8 +9,13 @@ Layout of the showcase video produced by `scripts/dream.py`:
 
 ## Documentation
 
-- [**Operations**](docs/operations.md) — practical commands: training, resuming, the dashboard
-  and cleanup tools, evaluating a checkpoint, generating the dream video, choosing a device.
+- [**Training**](docs/training.md) — starting/resuming a run, choosing a device, speed tuning,
+  running a serious long training, the sparse-reward A/B experiment.
+- [**Monitoring**](docs/monitoring.md) — watching a run's progress, listing and deleting old runs.
+- [**Evaluation**](docs/evaluation.md) — evaluating a trained checkpoint, generating the dream
+  showcase video.
+- [**Baselines**](docs/baselines.md) — the PPO comparison run.
+- [**Testing**](docs/testing.md) — the unit test suite and the smoke test.
 - [**Training pipeline**](docs/training_pipeline.md) — step-by-step walkthrough of what happens
   inside one training step: act → replay → world-model update → imagination rollout.
 - [**World model design**](docs/design_world_model.md) — why the RSSM looks the way it does:
@@ -50,7 +55,7 @@ pip install "gym==0.25.2" "gym-super-mario-bros==7.4.0" "numpy<2" "torch>=2.2" \
 ```
 
 Device selection (CPU/CUDA/MPS/TPU) is automatic and MPS's CPU-op-fallback is enabled by default —
-see [docs/operations.md](docs/operations.md#choosing-a-device) if you need to override it.
+see [docs/training.md](docs/training.md#choosing-a-device) if you need to override it.
 
 All commands below assume you're running from the repo root (`dreamer-mario/`).
 
@@ -64,9 +69,10 @@ There's no separate "resume" command.
 python scripts/train.py --name flag-run
 ```
 
-See [docs/operations.md](docs/operations.md) for the full command reference: detached/overnight
-runs, speed/sample-efficiency tuning, monitoring (`scripts/dashboard.py`), deleting old runs
-(`scripts/cleanup.py`), evaluating a checkpoint, and generating the dream showcase video. See
+See [docs/training.md](docs/training.md) for the full training command reference — including how
+to run a serious long training — [docs/monitoring.md](docs/monitoring.md) for watching progress
+and cleaning up old runs, and [docs/evaluation.md](docs/evaluation.md) for evaluating a checkpoint
+and generating the dream showcase video. See
 [docs/training_pipeline.md](docs/training_pipeline.md) for what actually happens inside each
 training step.
 

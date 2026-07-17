@@ -11,16 +11,20 @@ dreamer-mario/
 ├── conftest.py                 puts the repo root on sys.path so `import dreamer` works in tests
 ├── configs/
 │   └── default.yaml          every hyperparameter, M2-sized defaults
-├── tests/                    pytest unit tests for the pure/deterministic layer — see operations.md
+├── tests/                    pytest unit tests for the pure/deterministic layer — see testing.md
 │   ├── test_config.py          pick_device: auto-detect priority, MPS fallback, TPU error path
 │   ├── test_utils.py           symlog/twohot round-trip, lambda_return, return normalization
 │   ├── test_replay.py          ring-buffer wraparound and temporal contiguity
 │   ├── test_rssm.py            unimix floor, KL free bits, KL-balancing stop-gradient placement
 │   ├── test_actor_critic.py    actor/critic/world-model gradient isolation, slow-critic EMA
 │   └── test_networks.py        shape and zero-init checks for the network heads
-├── docs/
+├── docs/                     split by what you're trying to do, see README's Documentation list
 │   ├── architecture.md        this file
-│   ├── operations.md          practical commands: training recipes, resuming, monitoring
+│   ├── training.md            starting/resuming, device selection, speed tuning, long runs
+│   ├── monitoring.md          dashboard + cleanup: watching and managing runs
+│   ├── evaluation.md          evaluating a checkpoint, generating the dream showcase video
+│   ├── baselines.md           the PPO comparison run
+│   ├── testing.md             the unit test suite and the smoke test
 │   ├── training_pipeline.md   step-by-step collect → world model → imagination loop
 │   ├── design_world_model.md  why RSSM / discrete latents / symlog-twohot / KL balancing
 │   └── design_actor_critic.md why imagination-only, REINFORCE, return normalization, EMA critic

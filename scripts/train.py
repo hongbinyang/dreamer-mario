@@ -8,7 +8,7 @@ config it was started with, continuous TensorBoard curve).
 
 Ctrl-C any time; state is safe up to the last checkpoint (run.checkpoint_every
 steps). Re-run the same command to continue. Run from the repo root so the
-default --config path resolves. See docs/operations.md.
+default --config path resolves. See docs/training.md.
 """
 from __future__ import annotations
 
