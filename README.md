@@ -7,12 +7,18 @@ entirely inside its own learned world model.
 Layout of the showcase video produced by `scripts/dream.py`:
 `[ real gameplay | the model's imagination | prediction error ]`
 
-**Docs:**
-[operations (how to actually run things)](docs/operations.md) ·
-[training pipeline](docs/training_pipeline.md) ·
-[world model design](docs/design_world_model.md) ·
-[actor-critic design](docs/design_actor_critic.md) ·
-[architecture & file map](docs/architecture.md)
+## Documentation
+
+- [**Operations**](docs/operations.md) — practical commands: training, resuming, the dashboard
+  and cleanup tools, evaluating a checkpoint, generating the dream video, choosing a device.
+- [**Training pipeline**](docs/training_pipeline.md) — step-by-step walkthrough of what happens
+  inside one training step: act → replay → world-model update → imagination rollout.
+- [**World model design**](docs/design_world_model.md) — why the RSSM looks the way it does:
+  discrete categorical latents, unimix, KL balancing, symlog/twohot regression.
+- [**Actor-critic design**](docs/design_actor_critic.md) — why the actor-critic trains purely in
+  imagination via REINFORCE, percentile return normalization, the EMA slow critic.
+- [**Architecture & file map**](docs/architecture.md) — the full directory tree and a table of
+  exactly where each Dreamer v1/v2/v3 paper idea lives in code.
 
 ## Setup (macOS, Apple Silicon)
 
