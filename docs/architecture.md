@@ -21,6 +21,7 @@ dreamer-mario/
 ├── docs/                     split by what you're trying to do, see README's Documentation list
 │   ├── architecture.md        this file
 │   ├── training.md            starting/resuming, device selection, speed tuning, long runs
+│   ├── configuration.md       every hyperparameter, what it does, resume-safety per key
 │   ├── monitoring.md          dashboard + cleanup: watching and managing runs
 │   ├── evaluation.md          evaluating a checkpoint, generating the dream showcase video
 │   ├── baselines.md           the PPO comparison run

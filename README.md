@@ -11,6 +11,8 @@ Layout of the showcase video produced by `scripts/dream.py`:
 
 - [**Training**](docs/training.md) — starting/resuming a run, choosing a device, speed tuning,
   running a serious long training, the sparse-reward A/B experiment.
+- [**Configuration**](docs/configuration.md) — every hyperparameter, what it does, and whether
+  it's safe to change on a resumed run.
 - [**Monitoring**](docs/monitoring.md) — watching a run's progress, listing and deleting old runs.
 - [**Evaluation**](docs/evaluation.md) — evaluating a trained checkpoint, generating the dream
   showcase video.

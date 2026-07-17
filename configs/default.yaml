@@ -1,5 +1,6 @@
 # DreamerV3-small-ish config, sized for a MacBook Pro M2 (MPS).
-# Every knob you might want to touch lives here.
+# Every knob you might want to touch lives here. Full reference, including
+# which keys are safe to change on a resumed run: ../docs/configuration.md
 
 env:
   id: SuperMarioBros-1-1-v0
@@ -50,4 +51,3 @@ run:
   log_every: 500              # env steps between metric logs
   video_every: 20000          # env steps between open-loop pred videos
   checkpoint_every: 25000
-  eval_episodes: 3
