@@ -1,7 +1,7 @@
 """Evaluate a trained agent.
 
-    python scripts/evaluate.py --name flag-run --episodes 5 --video eval.mp4
-    python scripts/evaluate.py --ckpt runs/flag-run/ckpt.pt --episodes 5   # equivalent
+    python scripts/evaluate.py --name trial --episodes 5 --video eval.mp4
+    python scripts/evaluate.py --ckpt runs/trial/ckpt.pt --episodes 5   # equivalent
 """
 from __future__ import annotations
 

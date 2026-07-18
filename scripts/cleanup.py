@@ -1,7 +1,7 @@
 """List or delete named training runs under runs/.
 
     python scripts/cleanup.py --list
-    python scripts/cleanup.py --name flag-run --yes
+    python scripts/cleanup.py --name old-run --yes
     python scripts/cleanup.py --name old-run-1 --name old-run-2 --yes
 
 Deletion is a dry-run unless --yes is passed: without it, this only prints

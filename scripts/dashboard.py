@@ -1,7 +1,7 @@
 """Launch TensorBoard for one or more named runs.
 
-    python scripts/dashboard.py --name flag-run
-    python scripts/dashboard.py --name flag-run --name sparse-ablation   # compare side by side
+    python scripts/dashboard.py --name trial
+    python scripts/dashboard.py --name trial --name trial-sparse   # compare side by side
 """
 from __future__ import annotations
 

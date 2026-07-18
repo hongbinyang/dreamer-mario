@@ -2,9 +2,9 @@
 running the same --name again automatically resumes it (same logdir, same
 config it was started with, continuous TensorBoard curve).
 
-    python scripts/train.py --name flag-run
-    python scripts/train.py --name flag-run --set env.grayscale=true
-    python scripts/train.py --name sparse-ablation --set env.sparse_reward=true
+    python scripts/train.py --name trial
+    python scripts/train.py --name trial --set env.grayscale=true
+    python scripts/train.py --name trial-sparse --set env.sparse_reward=true
 
 Ctrl-C any time; state is safe up to the last checkpoint (run.checkpoint_every
 steps). Re-run the same command to continue. Run from the repo root so the

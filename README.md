@@ -68,7 +68,7 @@ Every run is identified by `--name` — it's required, and it's also how you res
 There's no separate "resume" command.
 
 ```bash
-python scripts/train.py --name flag-run
+python scripts/train.py --name trial
 ```
 
 See [docs/training.md](docs/training.md) for the full training command reference — including how
@@ -86,10 +86,12 @@ scrolling and all — decoded back to pixels.
 
 ```bash
 pip install stable-baselines3 gymnasium
-python baselines/ppo_baseline.py --steps 1000000
+python baselines/ppo_baseline.py --name trial
 ```
 
-Uses the identical env wrapper, so env-frame counts are directly comparable.
+Uses the identical env wrapper, so env-frame counts are directly comparable — see
+[docs/baselines.md](docs/baselines.md) for the full command reference, config keys, and measured
+throughput.
 
 ## Suggested experiments
 

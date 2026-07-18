@@ -3,8 +3,8 @@
 ## Monitor a run
 
 ```bash
-python scripts/dashboard.py --name flag-run                        # one run
-python scripts/dashboard.py --name flag-run --name sparse-ablation  # compare runs side by side
+python scripts/dashboard.py --name trial                        # one run
+python scripts/dashboard.py --name trial --name trial-sparse    # compare runs side by side
 ```
 
 Thin wrapper around `tensorboard --logdir runs/<name>` (or `--logdir_spec` for multiple named

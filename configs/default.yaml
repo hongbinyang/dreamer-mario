@@ -51,3 +51,15 @@ run:
   log_every: 500              # env steps between metric logs
   video_every: 20000          # env steps between open-loop pred videos
   checkpoint_every: 25000
+
+ppo:
+  # stable-baselines3 baseline (baselines/ppo_baseline.py), for the
+  # sample-efficiency comparison. total_steps matches train.total_steps so
+  # env-frame counts on the x-axis are directly comparable to Dreamer runs.
+  total_steps: 1000000
+  n_steps: 512
+  batch_size: 256
+  learning_rate: 2.5e-4
+  ent_coef: 0.02               # bumped from SB3's stock 0.01 default, same spirit as the
+                                # entropy_coef fix that broke Dreamer's exploration plateau --
+                                # not empirically validated for PPO the same way, adjust freely

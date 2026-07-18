@@ -6,8 +6,8 @@ open-loop rollout: the model sees `--context` real frames, then predicts
 the next `--horizon` frames purely in latent space (replaying the same
 actions), decoded back to pixels.
 
-    python scripts/dream.py --name flag-run --out dream.mp4
-    python scripts/dream.py --ckpt runs/flag-run/ckpt.pt --out dream.mp4  # equivalent
+    python scripts/dream.py --name trial --out dream.mp4
+    python scripts/dream.py --ckpt runs/trial/ckpt.pt --out dream.mp4  # equivalent
 """
 from __future__ import annotations
 

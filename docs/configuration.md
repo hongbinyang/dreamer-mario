@@ -4,7 +4,7 @@ Every hyperparameter lives in [configs/default.yaml](../configs/default.yaml), l
 `dreamer/config.py`. Two ways to change something:
 
 ```bash
-python scripts/train.py --name flag-run --set model.cnn_depth=16 --set train.total_steps=200000
+python scripts/train.py --name trial --set model.cnn_depth=16 --set train.total_steps=200000
 ```
 
 - `--set dotted.key=value`, repeatable. The value is cast to match the *existing* YAML value's
@@ -21,9 +21,10 @@ checkpoint's own embedded config**, then applies whatever `--set` overrides you 
 [training.md](training.md). Not every key behaves the same way once a checkpoint already exists:
 
 1. **Shape-affecting — mismatched values make `agent.load()` fail immediately** with a state-dict
-   size error (a safe, loud failure, not silent corruption): all of `model.*`, plus
+   size error (a safe, loud failure, not silent corruption): `model.cnn_depth`, `model.deter`,
+   `model.stoch`, `model.classes`, `model.hidden`, `model.head_layers`, `model.num_bins`, plus
    `env.grayscale`, `env.action_set`. `env.size` belongs here too, but for a stronger reason — see
-   below.
+   below. `model.unimix` is *not* in this tier — see tier 4.
 2. **Silently ignored on resume** — `train.model_lr` and `train.ac_lr`. Verified directly: Adam's
    `load_state_dict()` restores each param group's saved hyperparameters, learning rate included,
    from the checkpoint — so a fresh `--set train.model_lr=...` on a resumed run has *no effect at
@@ -34,7 +35,11 @@ checkpoint's own embedded config**, then applies whatever `--set` overrides you 
    network shapes, but resuming a dense-reward run with `env.sparse_reward=true` (say) just
    confuses a reward head that already learned to predict the old signal.
 4. **Always safe, freely adjustable every run** — everything under `train.*` except the two
-   learning rates above, and everything under `run.*`.
+   learning rates above, everything under `run.*`, and `model.unimix`. Unlike the rest of
+   `model.*`, `unimix` only interpolates probabilities at runtime (`(1-unimix)*probs +
+   unimix/classes`) — it doesn't size any layer, so it doesn't need to match between the original
+   run and a resume. Verified directly: loading a checkpoint with `model.unimix` overridden works
+   with no shape mismatch.
 
 **`env.size` is a special case, not just a resume concern**: `ConvEncoder`'s flattened output size
 (`dreamer/networks.py`) is hardcoded as `8 * cnn_depth * 4 * 4`, which is only correct because four
@@ -111,3 +116,16 @@ these particular choices (discrete categorical latents, unimix, etc.).
 | `log_every` | `500` | Env steps between TensorBoard scalar logs. |
 | `video_every` | `20000` | Env steps between open-loop prediction GIFs — these accumulate (unique filename per step), unlike the checkpoint. |
 | `checkpoint_every` | `25000` | Env steps between checkpoint saves. Always overwrites the same `ckpt.pt`, atomically (temp file + rename) — an interrupt mid-save can't corrupt it. |
+
+## `ppo`
+
+Only consumed by `baselines/ppo_baseline.py`, not the Dreamer scripts — see
+[baselines.md](baselines.md) for the full command reference.
+
+| Key | Default | Meaning |
+|---|---|---|
+| `total_steps` | `1000000` | Env steps to train for; matches `train.total_steps` so the two are directly comparable. |
+| `n_steps` | `512` | SB3's rollout buffer size (env steps collected per policy update). |
+| `batch_size` | `256` | Minibatch size per PPO update epoch. |
+| `learning_rate` | `2.5e-4` | Adam learning rate. |
+| `ent_coef` | `0.02` | Entropy bonus. Bumped from SB3's stock `0.01` in the same spirit as the fix that broke Dreamer's exploration plateau — not validated for PPO the same rigorous way, treat as a starting point. |

@@ -7,8 +7,8 @@ if you want to point at a checkpoint that isn't under `runs/`.
 ## Evaluate a checkpoint
 
 ```bash
-python scripts/evaluate.py --name flag-run --episodes 5 --video eval.mp4
-python scripts/evaluate.py --ckpt runs/flag-run/ckpt.pt --episodes 5   # equivalent
+python scripts/evaluate.py --name trial --episodes 5 --video eval.mp4
+python scripts/evaluate.py --ckpt runs/trial/ckpt.pt --episodes 5   # equivalent
 ```
 
 Rebuilds the exact training config from the checkpoint automatically — no need to pass matching
@@ -17,7 +17,7 @@ Rebuilds the exact training config from the checkpoint automatically — no need
 ## Generate the dream showcase video
 
 ```bash
-python scripts/dream.py --name flag-run --out dream.mp4 --context 8 --horizon 56
+python scripts/dream.py --name trial --out dream.mp4 --context 8 --horizon 56
 ```
 
 Also auto-rebuilds its config from the checkpoint, same as `evaluate.py`.

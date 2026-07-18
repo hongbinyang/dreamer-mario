@@ -11,18 +11,20 @@ the same directory, with a continuous TensorBoard curve (a second event file is 
 same run directory — TensorBoard merges event files within a directory automatically).
 
 ```bash
-python scripts/train.py --name flag-run
+python scripts/train.py --name trial
 ```
 
 - First time: starts fresh from `configs/default.yaml` (+ any `--set` overrides) under
-  `runs/flag-run/`.
-- Every time after: detects `runs/flag-run/ckpt.pt`, loads weights + step counter, and rebuilds
+  `runs/trial/`.
+- Every time after: detects `runs/trial/ckpt.pt`, loads weights + step counter, and rebuilds
   the model from **the config embedded in that checkpoint** — not from `configs/default.yaml`
   again. `--set` overrides on a resume are applied on top of the checkpoint's config, so loop
   knobs (`train.total_steps`, `train.train_every`, `run.log_every`, ...) are freely adjustable
-  between runs, but `model.*` / `env.grayscale` / `env.size` / `env.action_set` must stay whatever
-  they were on the first run — changing those makes `agent.load()` fail with a state-dict shape
-  mismatch (a safe, loud failure, not silent corruption).
+  between runs, and so are `train.entropy_coef` and `model.unimix` — most of `model.*` and
+  `env.grayscale` / `env.size` / `env.action_set` must stay whatever they were on the first run,
+  though — changing those makes `agent.load()` fail with a state-dict shape mismatch (a safe,
+  loud failure, not silent corruption). Full breakdown of exactly which keys fall in which
+  category: [configuration.md](configuration.md#is-it-safe-to-change-this-on-resume).
 
 Ctrl-C any time — state is safe up to the last checkpoint (`run.checkpoint_every`, default
 25000 steps). Just re-run the same `--name` command to continue. `agent.save()` writes to a temp
@@ -41,11 +43,11 @@ Every script (`train.py`, `evaluate.py`, `dream.py`, `smoke_test.py`) takes the 
 flag, overriding `run.device` from the config:
 
 ```bash
-python scripts/train.py --name flag-run                    # auto-detect (default)
-python scripts/train.py --name flag-run --device cpu        # force CPU
-python scripts/train.py --name flag-run --device cuda:1     # a specific GPU
-python scripts/train.py --name flag-run --device mps        # force Apple Silicon GPU
-python scripts/train.py --name flag-run --device tpu        # requires torch_xla, see below
+python scripts/train.py --name trial                    # auto-detect (default)
+python scripts/train.py --name trial --device cpu        # force CPU
+python scripts/train.py --name trial --device cuda:1     # a specific GPU
+python scripts/train.py --name trial --device mps        # force Apple Silicon GPU
+python scripts/train.py --name trial --device tpu        # requires torch_xla, see below
 ```
 
 `auto` (the default) probes in order: **CUDA → MPS → TPU → CPU**, taking the first one available.
@@ -83,9 +85,9 @@ verified fast path.
 ### Start (or continue) a run
 
 ```bash
-python scripts/train.py --name flag-run
-python scripts/train.py --name flag-run --set env.grayscale=true      # only meaningful on first run
-python scripts/train.py --name sparse-ablation --set env.sparse_reward=true --set train.total_steps=1000000
+python scripts/train.py --name trial
+python scripts/train.py --name trial --set env.grayscale=true      # only meaningful on first run
+python scripts/train.py --name trial-sparse --set env.sparse_reward=true --set train.total_steps=1000000
 ```
 
 ### Run a serious long training
@@ -103,8 +105,8 @@ check:
 2. **Launch it detached**, so it survives a closed terminal or an accidental Ctrl-C:
 
    ```bash
-   nohup python scripts/train.py --name flag-run --set train.total_steps=1000000 \
-     > runs/flag-run/train.log 2>&1 &
+   nohup python scripts/train.py --name trial --set train.total_steps=1000000 \
+     > runs/trial/train.log 2>&1 &
    disown
    ```
 
@@ -113,8 +115,8 @@ check:
 3. **Check in periodically** rather than watching continuously:
 
    ```bash
-   tail -20 runs/flag-run/train.log            # latest step / best_x / flags line
-   python scripts/dashboard.py --name flag-run  # loss curves, KL, entropy over time
+   tail -20 runs/trial/train.log            # latest step / best_x / flags line
+   python scripts/dashboard.py --name trial  # loss curves, KL, entropy over time
    ```
 
    See [monitoring.md](monitoring.md) for what each TensorBoard tag means.
@@ -142,9 +144,9 @@ only set them on a run's *first* invocation — see the resume caveat above.
 ### Sparse-reward A/B experiment
 
 ```bash
-python scripts/train.py --name dense-baseline --set train.total_steps=1000000
-python scripts/train.py --name sparse-ablation --set env.sparse_reward=true --set train.total_steps=1000000
-python scripts/dashboard.py --name dense-baseline --name sparse-ablation
+python scripts/train.py --name trial --set train.total_steps=1000000
+python scripts/train.py --name trial-sparse --set env.sparse_reward=true --set train.total_steps=1000000
+python scripts/dashboard.py --name trial --name trial-sparse
 ```
 
 Identical env/model, only the reward signal changes (flag-only vs. dense x-progress) — see the
