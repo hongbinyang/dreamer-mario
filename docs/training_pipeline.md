@@ -66,11 +66,14 @@ posterior states (detached) --RSSM.imagine, horizon=15--> imagined trajectory
 
 ## 4. Log, checkpoint, and periodically render a dream
 
-- Every `log_every` steps: scalar metrics (losses, KL, entropy, `best_x`, flag rate, env fps) go
-  to TensorBoard.
+- Every `log_every` steps: scalar metrics (losses, KL, entropy, `best_x`, flag rate, env fps,
+  gradient norms, learning rates in use, real-action frequency) go to TensorBoard — full tag list
+  in [monitoring.md](monitoring.md).
 - Every `video_every` steps: an open-loop prediction GIF is written — real context frames, then
   pure imagination, decoded to pixels — the same mechanism used by `scripts/dream.py`, just run
   automatically during training so you can watch the world model's imagination sharpen over time.
+  A matching `wm/open_loop_error` scalar (pixel MSE on the imagined portion) gives that trend a
+  number, not just a GIF to eyeball.
 - Every `checkpoint_every` steps: `agent.save()` writes weights, optimizer state, and the exact
   training config into one `.pt` file, so `--resume` and `scripts/evaluate.py` /
   `scripts/dream.py` always reconstruct the identical model.

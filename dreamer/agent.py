@@ -57,7 +57,7 @@ class DreamerAgent:
         wm_loss, post, metrics = self.wm.loss(batch)
         self.wm_opt.zero_grad(set_to_none=True)
         wm_loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.wm.parameters(), t.model_grad_clip)
+        wm_grad_norm = torch.nn.utils.clip_grad_norm_(self.wm.parameters(), t.model_grad_clip)
         self.wm_opt.step()
 
         # 2) Actor-critic in imagination, starting from every posterior state.
@@ -67,13 +67,24 @@ class DreamerAgent:
         self.actor_opt.zero_grad(set_to_none=True)
         self.critic_opt.zero_grad(set_to_none=True)
         (actor_loss + critic_loss).backward()
-        torch.nn.utils.clip_grad_norm_(self.ac.actor.parameters(), t.ac_grad_clip)
-        torch.nn.utils.clip_grad_norm_(self.ac.critic.parameters(), t.ac_grad_clip)
+        actor_grad_norm = torch.nn.utils.clip_grad_norm_(self.ac.actor.parameters(), t.ac_grad_clip)
+        critic_grad_norm = torch.nn.utils.clip_grad_norm_(self.ac.critic.parameters(), t.ac_grad_clip)
         self.actor_opt.step()
         self.critic_opt.step()
         self.ac.update_slow_critic()
 
         metrics.update(ac_metrics)
+        # Pre-clip gradient norms: watch for exploding gradients or a clip
+        # threshold (train.model_grad_clip / ac_grad_clip) that's constantly
+        # being hit. Actual learning rates in use: watch for train.model_lr/
+        # ac_lr overrides silently not taking effect on a resume (Adam's
+        # load_state_dict() restores the checkpoint's old lr -- see
+        # docs/configuration.md).
+        metrics["wm/grad_norm"] = wm_grad_norm.item()
+        metrics["ac/actor_grad_norm"] = actor_grad_norm.item()
+        metrics["ac/critic_grad_norm"] = critic_grad_norm.item()
+        metrics["train/model_lr"] = self.wm_opt.param_groups[0]["lr"]
+        metrics["train/ac_lr"] = self.actor_opt.param_groups[0]["lr"]
         return metrics
 
     # ------------------------------------------------------------ save/load

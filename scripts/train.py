@@ -93,6 +93,7 @@ def main():
     flags = 0
     episodes = 0
     meters = {}
+    action_counts = np.zeros(env.num_actions, dtype=np.int64)
     t0, step0 = time.time(), step
 
     while step < cfg.train.total_steps:
@@ -105,6 +106,7 @@ def main():
                 torch.tensor([action], device=device), env.num_actions).float()
         else:
             action, policy_state = agent.act(obs, policy_state, is_first)
+            action_counts[action] += 1
         is_first = False
 
         obs, reward, done, info = env.step(action)
@@ -142,14 +144,25 @@ def main():
             writer.add_scalar("episode/best_x", best_x, step)
             writer.add_scalar("episode/flags", flags, step)
             writer.add_scalar("perf/env_fps", fps, step)
+            # Real-environment action frequency (policy actions only, not
+            # prefill's random ones) over this log window -- a direct,
+            # concrete view of policy diversity, complementing the abstract
+            # ac/entropy (which is computed on imagined rollouts).
+            total_actions = int(action_counts.sum())
+            if total_actions > 0:
+                for name, count in zip(env.action_names, action_counts):
+                    writer.add_scalar(f"act/{name}_freq", count / total_actions, step)
+                action_counts[:] = 0
             print(f"step {step:>8d} | episodes {episodes:>5d} | best_x {best_x:>5d} "
                   f"| flags {flags} | {fps:5.1f} env fps")
 
         if (step % cfg.run.video_every == 0
                 and len(replay) > cfg.replay.seq_len + 1):
+            video_context = 5
             video = agent.wm.video_pred(
                 {k: torch.as_tensor(v, device=device)
-                 for k, v in replay.sample().items()})
+                 for k, v in replay.sample().items()},
+                context=video_context)
             frames = video.numpy()
             if frames.shape[-1] == 1:
                 frames = np.repeat(frames, 3, axis=-1)
@@ -160,6 +173,20 @@ def main():
                                  video.permute(0, 3, 1, 2).unsqueeze(0), step, fps=10)
             except ImportError:
                 pass
+
+            # Open-loop imagination error: pixel MSE between the imagined
+            # and real frames, restricted to the truly-imagined portion
+            # (excludes the posterior-reconstructed context frames, which
+            # aren't a fair test of imagination). Reuses the [truth|model|
+            # error] layout video_pred already produced, no extra forward
+            # pass -- a scalar trend for the same thing the GIFs only let
+            # you eyeball.
+            w = frames.shape[2] // 3
+            truth_px = frames[video_context:, :, :w].astype(np.float32) / 255.0
+            model_px = frames[video_context:, :, w:2 * w].astype(np.float32) / 255.0
+            if len(truth_px):
+                writer.add_scalar("wm/open_loop_error",
+                                   float(np.mean((truth_px - model_px) ** 2)), step)
 
         if step % cfg.run.checkpoint_every == 0:
             agent.save(logdir / "ckpt.pt", step)

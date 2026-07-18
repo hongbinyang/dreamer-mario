@@ -39,6 +39,7 @@ class MarioEnv:
         self._raw = gym_super_mario_bros.make(env_id)
         self._env = JoypadSpace(self._raw, ACTION_SETS[action_set])
         self.num_actions = len(ACTION_SETS[action_set])
+        self.action_names = ["+".join(combo) for combo in ACTION_SETS[action_set]]
         self.frame_skip = frame_skip
         self.size = size
         self.grayscale = grayscale
