@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import pathlib
+import signal
 import sys
 
 import gymnasium as gym
@@ -75,6 +76,12 @@ def make_metrics_callback():
 
 
 def main():
+    # A backgrounded launch (as the web GUI always uses) has SIGINT set to
+    # SIG_IGN before exec by the shell; Python respects an inherited SIG_IGN
+    # and won't otherwise install its own handler. Reset explicitly so Stop
+    # actually works -- see scripts/train.py for the full explanation.
+    signal.signal(signal.SIGINT, signal.default_int_handler)
+
     from stable_baselines3 import PPO
     from stable_baselines3.common.monitor import Monitor
 
@@ -98,7 +105,16 @@ def main():
     model = PPO("CnnPolicy", env, verbose=1, tensorboard_log=str(logdir), device=args.device,
                 n_steps=cfg.ppo.n_steps, batch_size=cfg.ppo.batch_size,
                 learning_rate=cfg.ppo.learning_rate, ent_coef=cfg.ppo.ent_coef)
-    model.learn(total_timesteps=cfg.ppo.total_steps, callback=make_metrics_callback())
+    try:
+        model.learn(total_timesteps=cfg.ppo.total_steps, callback=make_metrics_callback())
+    except KeyboardInterrupt:
+        # Unlike train.py, SB3 has no periodic mid-training checkpoint of
+        # its own -- without this, Ctrl-C/Stop would discard all progress
+        # instead of just stopping early. There's no resume support here
+        # either way (see the module docstring), so this is purely to make
+        # "stop early, keep what you had" work rather than "stop early,
+        # lose everything."
+        print("interrupted -- saving current model before exiting")
     model.save(str(logdir / "model"))
     env.close()
 

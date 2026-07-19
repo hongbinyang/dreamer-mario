@@ -32,6 +32,14 @@ file and atomically renames it into place, so even an interrupt landing mid-save
 corrupt `ckpt.pt` — the file on disk is always either the previous complete checkpoint or the new
 one, never a partial write.
 
+This is true whether the run is in the foreground or detached (the `nohup ... &` recipe below,
+or a run started from the [web GUI](webui.md)) — verified directly against a real regression: a
+shell backgrounding a process sets `SIGINT` to ignored in the child *before* it execs Python,
+and that disposition survives exec, so without an explicit reset a backgrounded `train.py` would
+be permanently immune to `SIGINT`/Ctrl-C-from-another-terminal, silently. `scripts/train.py`
+resets it back to normal as one of its first actions specifically so this guarantee holds
+everywhere, not just when it's the shell's foreground job.
+
 **One caveat**: the replay buffer itself is not checkpointed, only model/optimizer weights and
 the step counter. So every resume goes through a fresh `replay.prefill` (5000 steps by default)
 warm-up of random actions before training resumes — same as a brand-new run. Frequent

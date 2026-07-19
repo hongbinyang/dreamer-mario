@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import pathlib
+import signal
 import sys
 import time
 
@@ -30,6 +31,16 @@ from dreamer.utils import RunningMean  # noqa: E402
 
 
 def main():
+    # A shell backgrounding this process (`cmd &`, including the nohup/disown
+    # recipe this file's own docstring recommends) sets SIGINT to SIG_IGN in
+    # the child *before* exec, to protect background jobs from a terminal's
+    # Ctrl-C. SIG_IGN survives exec(), and CPython's startup deliberately
+    # leaves an already-ignored SIGINT alone rather than installing its own
+    # handler -- so a backgrounded process is otherwise *permanently* immune
+    # to SIGINT, breaking the "Ctrl-C any time" guarantee above. Verified
+    # directly: reproduced with the exact nohup+disown command from this
+    # docstring, a `kill -INT` never stopped the process without this line.
+    signal.signal(signal.SIGINT, signal.default_int_handler)
     parser = argparse.ArgumentParser()
     parser.add_argument("--name", required=True,
                          help="run identifier; state lives in <run.logdir>/<name>/")

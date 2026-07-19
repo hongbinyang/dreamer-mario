@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import pathlib
+import signal
 import sys
 
 import imageio
@@ -20,6 +21,11 @@ from dreamer.envs.mario import make_env  # noqa: E402
 
 
 def main():
+    # A backgrounded launch (as the web GUI always uses) has SIGINT set to
+    # SIG_IGN before exec by the shell; Python respects an inherited SIG_IGN
+    # and won't otherwise install its own handler. Reset explicitly so Stop
+    # actually works -- see scripts/train.py for the full explanation.
+    signal.signal(signal.SIGINT, signal.default_int_handler)
     parser = argparse.ArgumentParser()
     which = parser.add_mutually_exclusive_group(required=True)
     which.add_argument("--name", help="run name under --logdir; resolves to <logdir>/<name>/ckpt.pt")
