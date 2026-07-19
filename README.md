@@ -79,8 +79,9 @@ and generating the dream showcase video. See
 training step.
 
 `scripts/dream.py` is the showcase: the model watches 8 real frames, then predicts ~56 frames
-(about 22 seconds of NES time at frame-skip 4) purely in latent space — Goombas, physics,
-scrolling and all — decoded back to pixels.
+purely in latent space — Goombas, physics, scrolling and all — decoded back to pixels. The
+default `--context 8 --horizon 56` covers 64 frames × `frame_skip=4` ≈ 4.3 seconds of NES time,
+and the output video now plays back at that same real-time pace (`60 / frame_skip` fps).
 
 ## PPO baseline (sample-efficiency comparison)
 

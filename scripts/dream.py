@@ -36,6 +36,8 @@ def main():
     parser.add_argument("--context", type=int, default=8)
     parser.add_argument("--horizon", type=int, default=56)
     parser.add_argument("--upscale", type=int, default=4)
+    parser.add_argument("--fps", type=float, default=None,
+                         help="video playback fps; defaults to real-time (60 / env.frame_skip)")
     parser.add_argument("--device", default=None,
                          help="auto (default) | cpu | cuda[:N] | mps | tpu; overrides run.device")
     args = parser.parse_args()
@@ -91,8 +93,9 @@ def main():
     if args.upscale > 1:
         video = np.repeat(np.repeat(video, args.upscale, axis=1), args.upscale, axis=2)
 
-    imageio.mimsave(args.out, list(video), fps=10)
-    print(f"wrote {args.out}: {args.context} context frames, "
+    fps = args.fps if args.fps is not None else 60.0 / cfg.env.frame_skip
+    imageio.mimsave(args.out, list(video), fps=fps)
+    print(f"wrote {args.out} at {fps:.1f} fps: {args.context} context frames, "
           f"then {horizon} imagined frames. Layout: [truth | model | error].")
 
 

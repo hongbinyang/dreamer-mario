@@ -167,10 +167,11 @@ def main():
             if frames.shape[-1] == 1:
                 frames = np.repeat(frames, 3, axis=-1)
             import imageio
-            imageio.mimsave(logdir / f"open_loop_{step}.gif", list(frames), fps=10)
+            gif_fps = 60.0 / cfg.env.frame_skip  # real-time: each frame is env.frame_skip NES frames
+            imageio.mimsave(logdir / f"open_loop_{step}.gif", list(frames), fps=gif_fps)
             try:  # TensorBoard video needs moviepy; the GIF above always works.
                 writer.add_video("wm/open_loop",
-                                 video.permute(0, 3, 1, 2).unsqueeze(0), step, fps=10)
+                                 video.permute(0, 3, 1, 2).unsqueeze(0), step, fps=gif_fps)
             except ImportError:
                 pass
 

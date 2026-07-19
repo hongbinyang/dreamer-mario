@@ -27,6 +27,8 @@ def main():
     parser.add_argument("--config", default="configs/default.yaml")
     parser.add_argument("--episodes", type=int, default=5)
     parser.add_argument("--video", default=None, help="save first episode to mp4")
+    parser.add_argument("--fps", type=float, default=None,
+                         help="video playback fps; defaults to real-time (60 / env.frame_skip)")
     parser.add_argument("--device", default=None,
                          help="auto (default) | cpu | cuda[:N] | mps | tpu; overrides run.device")
     args = parser.parse_args()
@@ -68,8 +70,12 @@ def main():
     print(f"\nmean return {np.mean(returns):.1f} | mean x {np.mean(xs):.0f} "
           f"| flag rate {flags}/{args.episodes}")
     if args.video and frames:
-        imageio.mimsave(args.video, frames, fps=30)
-        print(f"wrote {args.video}")
+        # Each frame is one env.step(), which already advances env.frame_skip
+        # real NES frames -- so real-time playback is 60 / frame_skip fps,
+        # not an arbitrary constant.
+        fps = args.fps if args.fps is not None else 60.0 / cfg.env.frame_skip
+        imageio.mimsave(args.video, frames, fps=fps)
+        print(f"wrote {args.video} at {fps:.1f} fps")
     env.close()
 
 
