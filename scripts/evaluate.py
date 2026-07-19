@@ -2,6 +2,7 @@
 
     python scripts/evaluate.py --name trial --episodes 5 --video eval.mp4
     python scripts/evaluate.py --ckpt runs/trial/ckpt.pt --episodes 5   # equivalent
+    python scripts/evaluate.py --name trial --set run.seed=1             # override on top of the checkpoint's config
 """
 from __future__ import annotations
 
@@ -14,7 +15,7 @@ import numpy as np
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from dreamer.agent import DreamerAgent  # noqa: E402
-from dreamer.config import load_config, pick_device  # noqa: E402
+from dreamer.config import apply_overrides, dict_to_ns, pick_device  # noqa: E402
 from dreamer.envs.mario import make_env  # noqa: E402
 
 
@@ -24,7 +25,8 @@ def main():
     which.add_argument("--name", help="run name under --logdir; resolves to <logdir>/<name>/ckpt.pt")
     which.add_argument("--ckpt", help="explicit checkpoint path")
     parser.add_argument("--logdir", default="runs", help="parent directory runs live under (with --name)")
-    parser.add_argument("--config", default="configs/default.yaml")
+    parser.add_argument("--set", action="append", default=[],
+                         help="dotted.key=value override applied on top of the checkpoint's config")
     parser.add_argument("--episodes", type=int, default=5)
     parser.add_argument("--video", default=None, help="save first episode to mp4")
     parser.add_argument("--fps", type=float, default=None,
@@ -36,11 +38,7 @@ def main():
 
     import torch
     ckpt = torch.load(ckpt_path, map_location="cpu")
-    if "cfg" in ckpt:  # exact config the model was trained with
-        from dreamer.config import dict_to_ns
-        cfg = dict_to_ns(ckpt["cfg"])
-    else:
-        cfg = load_config(["--config", args.config])
+    cfg = dict_to_ns(apply_overrides(ckpt["cfg"], args.set))
     if args.device:
         cfg.run.device = args.device
     device = pick_device(cfg.run.device)

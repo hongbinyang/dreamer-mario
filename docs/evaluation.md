@@ -37,7 +37,7 @@ real-time `60 / env.frame_skip` fps (overridable with `--fps`).
 | `--name` | *(required; mutually exclusive with `--ckpt`)* | Run name under `--logdir`; resolves to `<logdir>/<name>/ckpt.pt`. |
 | `--ckpt` | *(required; mutually exclusive with `--name`)* | Explicit checkpoint path. |
 | `--logdir` | `runs` | Parent directory runs live under (used with `--name`). |
-| `--config` | `configs/default.yaml` | Fallback only, used if the checkpoint has no embedded config. |
+| `--set KEY=VALUE` | *(none; repeatable)* | Dotted-key override applied on top of the checkpoint's config, e.g. `--set run.seed=1`. |
 | `--episodes` | `5` | Number of greedy evaluation episodes to run. |
 | `--video` | `None` | If set, save the first episode's real gameplay to this path (e.g. `eval.mp4`). |
 | `--fps` | `None` (→ `60 / env.frame_skip`, real-time) | Video playback fps. Lower it for slow motion. |
@@ -50,7 +50,7 @@ real-time `60 / env.frame_skip` fps (overridable with `--fps`).
 | `--name` | *(required; mutually exclusive with `--ckpt`)* | Run name under `--logdir`; resolves to `<logdir>/<name>/ckpt.pt`. |
 | `--ckpt` | *(required; mutually exclusive with `--name`)* | Checkpoint to dream from. |
 | `--logdir` | `runs` | Parent directory runs live under (used with `--name`). |
-| `--config` | `configs/default.yaml` | Fallback only, same as `evaluate.py`. |
+| `--set KEY=VALUE` | *(none; repeatable)* | Dotted-key override applied on top of the checkpoint's config, same as `evaluate.py`. |
 | `--out` | `dream.mp4` | Output video path. |
 | `--context` | `8` | Real frames the model watches before it starts imagining. |
 | `--horizon` | `56` | Frames to imagine after the context window. |

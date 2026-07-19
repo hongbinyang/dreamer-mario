@@ -36,23 +36,28 @@ def main():
     parser.add_argument("--config", default="configs/default.yaml")
     parser.add_argument("--set", action="append", default=[],
                          help="dotted.key=value overrides")
+    parser.add_argument("--logdir", default=None,
+                         help="overrides run.logdir (parent directory runs live under)")
     parser.add_argument("--device", default=None,
                          help="auto (default) | cpu | cuda[:N] | mps | tpu; "
                               "overrides run.device, safe to change on resume")
     args = parser.parse_args()
+    overrides = list(args.set)
+    if args.logdir:
+        overrides.append(f"run.logdir={args.logdir}")
 
-    # A fresh read of --config/--set tells us where runs live (run.logdir),
-    # which is all we need to check whether this name already has a
-    # checkpoint. If it does, the checkpoint's own embedded config (not this
-    # read) becomes the source of truth below — --set overrides still apply
+    # A fresh read of --config/overrides tells us where runs live
+    # (run.logdir), which is all we need to check whether this name already
+    # has a checkpoint. If it does, the checkpoint's own embedded config (not
+    # this read) becomes the source of truth below — overrides still apply
     # on top of it, so loop knobs like total_steps remain changeable, but
     # model/env shape must match the original run or agent.load() will fail.
-    raw = load_yaml(args.config, args.set)
+    raw = load_yaml(args.config, overrides)
     logdir = pathlib.Path(raw["run"]["logdir"]) / args.name
     ckpt_path = logdir / "ckpt.pt"
     resuming = ckpt_path.exists()
     if resuming:
-        raw = apply_overrides(torch.load(ckpt_path, map_location="cpu")["cfg"], args.set)
+        raw = apply_overrides(torch.load(ckpt_path, map_location="cpu")["cfg"], overrides)
     cfg = dict_to_ns(raw)
     if args.device:
         cfg.run.device = args.device
