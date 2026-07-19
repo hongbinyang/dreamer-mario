@@ -43,6 +43,23 @@ def _set_args(overrides: dict, extra_text: str) -> list[str]:
     return args
 
 
+_VIDEO_FLAG = {"evaluate": "--video", "dream": "--out"}
+
+
+def _video_filename_from_cmd(cmd: list[str] | None, job_kind: str) -> str | None:
+    """Reads the --video/--out value straight out of a job's own argv --
+    that's already the source of truth shown to the user for transparency,
+    so this stays in sync automatically instead of needing a persisted
+    duplicate. Mirrors static/app.js's videoUrlForJob(), server-side."""
+    flag = _VIDEO_FLAG.get(job_kind)
+    if not cmd or not flag or flag not in cmd:
+        return None
+    idx = cmd.index(flag)
+    if idx + 1 >= len(cmd):
+        return None
+    return cmd[idx + 1].split("/")[-1]
+
+
 def create_app() -> Flask:
     app = Flask(__name__)
 
@@ -146,11 +163,82 @@ def create_app() -> Flask:
         record["video_filename"] = out_filename
         return jsonify(record)
 
+    # -------------------------------------------------------- artifacts
+    @app.get("/api/artifacts")
+    def api_artifacts():
+        job_kind = request.args.get("job_kind")
+        if job_kind not in ("evaluate", "dream"):
+            return jsonify({"error": "job_kind must be evaluate or dream"}), 400
+
+        job_entries = []
+        consumed = set()  # (name, filename) already accounted for by a job record
+        for j in jobs.list_jobs():
+            if j["kind"] != job_kind:
+                continue
+            filename = _video_filename_from_cmd(j["cmd"], job_kind)
+            job_entries.append({
+                "name": j["name"], "filename": filename, "job_id": j["job_id"],
+                "alive": j["alive"], "cmd": j["cmd"],
+                "has_log": True,  # the log file is created before the process even starts
+                "size_mb": None, "mtime": j["started_at"],
+            })
+            if filename:
+                consumed.add((j["name"], filename))
+
+        disk_artifacts = runs.scan_artifacts(job_kind)
+        disk_by_key = {(a["name"], a["filename"]): a for a in disk_artifacts}
+        for e in job_entries:
+            key = (e["name"], e["filename"])
+            if e["filename"] and key in disk_by_key:
+                d = disk_by_key[key]
+                e["size_mb"], e["mtime"], e["has_log"] = d["size_mb"], d["mtime"], d["has_log"]
+
+        orphans = [
+            {"name": a["name"], "filename": a["filename"], "job_id": None, "alive": False,
+             "cmd": None, "has_log": a["has_log"], "size_mb": a["size_mb"], "mtime": a["mtime"]}
+            for a in disk_artifacts if (a["name"], a["filename"]) not in consumed
+        ]
+
+        out = sorted(job_entries + orphans, key=lambda e: e["mtime"], reverse=True)
+        return jsonify(out[:20])
+
+    @app.post("/api/artifacts/delete")
+    def api_delete_artifact():
+        data = request.get_json(force=True)
+        name, job_kind, filename = data["name"], data["job_kind"], data["filename"]
+        prefix = runs._ARTIFACT_PREFIX.get(job_kind)
+        if not prefix or not filename.startswith(f"{prefix}_") or not filename.endswith(".mp4"):
+            return jsonify({"ok": False, "error": "invalid filename"}), 400
+        run_dir = (REPO_ROOT / "runs" / name).resolve()
+        video_path = (run_dir / filename).resolve()
+        if video_path.parent != run_dir:
+            return jsonify({"ok": False, "error": "invalid filename"}), 400
+
+        video_path.unlink(missing_ok=True)
+        video_path.with_suffix(".log").unlink(missing_ok=True)
+        for j in jobs.list_jobs():
+            if (j["kind"] == job_kind and j["name"] == name
+                    and _video_filename_from_cmd(j["cmd"], job_kind) == filename):
+                jobs.delete_job_record(j["job_id"])
+        return jsonify({"ok": True})
+
     # ---------------------------------------------------------- compare
     @app.post("/api/compare")
     def api_compare():
         data = request.get_json(force=True)
         entries = data["runs"]  # [{"name": ..., "kind": "dreamer"|"ppo"}, ...]
+        requested = sorted((e["kind"], e["name"]) for e in entries)
+
+        # Re-open an existing dashboard covering the exact same run-set
+        # instead of leaking another tensorboard process on another port --
+        # a different selection still gets its own, this only dedupes an
+        # identical repeat click.
+        for j in jobs.list_jobs():
+            if j["kind"] == "dashboard" and j["alive"]:
+                have = sorted(tuple(pair) for pair in j.get("entries", []))
+                if have == requested:
+                    return jsonify(j)
+
         port = _free_port()
         cmd = [PYTHON, "scripts/dashboard.py", "--port", str(port)]
         for e in entries:
@@ -158,8 +246,10 @@ def create_app() -> Flask:
         name_label = "+".join(e["name"] for e in entries)
         log_path = REPO_ROOT / "webui_state" / "dashboards" / f"{port}.log"
         record = jobs.launch(cmd, name=name_label, kind="dashboard", log_path=log_path,
-                              cwd=REPO_ROOT)
-        record["url"] = f"http://localhost:{port}/"
+                              cwd=REPO_ROOT, extra={
+                                  "entries": [[e["kind"], e["name"]] for e in entries],
+                                  "url": f"http://localhost:{port}/",
+                              })
         return jsonify(record)
 
     # ---------------------------------------------------------- files

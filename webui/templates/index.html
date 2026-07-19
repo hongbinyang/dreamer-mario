@@ -70,36 +70,45 @@
       <button type="submit">Start PPO baseline</button>
     </form>
   </div>
+  <p class="hint">Training/PPO progress for every run name shows below once started.</p>
+  <div id="jobs-list"></div>
 </section>
 
 <section id="eval-dream-section">
   <h2>Evaluate &amp; Dream</h2>
   <div class="two-col">
-    <form id="evaluate-form" class="panel">
-      <h3>Evaluate</h3>
-      <label>Run <select name="name" class="dreamer-run-select" required></select></label>
-      <label>Episodes <input name="episodes" type="number" value="5"></label>
-      <label class="checkbox"><input name="video" type="checkbox" checked> record video</label>
-      <label>Additional --set overrides (one per line)
-        <textarea name="set_text" rows="2"></textarea>
-      </label>
-      <button type="submit">Evaluate</button>
-    </form>
+    <div class="panel">
+      <form id="evaluate-form">
+        <h3>Evaluate</h3>
+        <label>Run <select name="name" class="dreamer-run-select" required></select></label>
+        <label>Episodes <input name="episodes" type="number" value="5"></label>
+        <label class="checkbox"><input name="video" type="checkbox" checked> record video</label>
+        <label>Additional --set overrides (one per line)
+          <textarea name="set_text" rows="2"></textarea>
+        </label>
+        <button type="submit">Evaluate</button>
+      </form>
+      <p class="hint">History below spans every run, not just the one selected above.</p>
+      <div id="evaluate-history"></div>
+    </div>
 
-    <form id="dream-form" class="panel">
-      <h3>Dream</h3>
-      <label>Run <select name="name" class="dreamer-run-select" required></select></label>
-      <label>context <input name="context" type="number" value="8"></label>
-      <label>horizon <input name="horizon" type="number" value="56"></label>
-      <label>upscale <input name="upscale" type="number" value="4"></label>
-      <label>fps <input name="fps" type="number" placeholder="auto: real-time"></label>
-      <label>Additional --set overrides (one per line)
-        <textarea name="set_text" rows="2"></textarea>
-      </label>
-      <button type="submit">Dream</button>
-    </form>
+    <div class="panel">
+      <form id="dream-form">
+        <h3>Dream</h3>
+        <label>Run <select name="name" class="dreamer-run-select" required></select></label>
+        <label>context <input name="context" type="number" value="8"></label>
+        <label>horizon <input name="horizon" type="number" value="56"></label>
+        <label>upscale <input name="upscale" type="number" value="4"></label>
+        <label>fps <input name="fps" type="number" placeholder="auto: real-time"></label>
+        <label>Additional --set overrides (one per line)
+          <textarea name="set_text" rows="2"></textarea>
+        </label>
+        <button type="submit">Dream</button>
+      </form>
+      <p class="hint">History below spans every run, not just the one selected above.</p>
+      <div id="dream-history"></div>
+    </div>
   </div>
-  <p class="hint">Results (including the video, once ready) appear under Active Jobs below.</p>
 </section>
 
 <section id="compare-section">
@@ -107,14 +116,11 @@
   <p class="hint">Pick 2+ runs from the checkboxes in the Runs table above, Dreamer and/or PPO
     baseline mixed freely, then compare. Opens a TensorBoard instance in a new tab; matching
     <code>episode/best_x</code>/<code>episode/flags</code> tags overlay directly since
-    <code>ppo_baseline.py</code>'s metrics callback logs them under the same names.</p>
+    <code>ppo_baseline.py</code>'s metrics callback logs them under the same names. Comparing the
+    same run selection again re-opens the existing dashboard instead of starting a new one.</p>
   <button id="compare-btn">Compare selected</button>
   <span id="compare-status"></span>
-</section>
-
-<section id="jobs-section">
-  <h2>Active jobs</h2>
-  <div id="jobs-list"></div>
+  <div id="dashboards-list"></div>
 </section>
 
 <script src="/static/app.js"></script>

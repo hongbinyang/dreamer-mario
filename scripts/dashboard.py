@@ -9,10 +9,20 @@ from __future__ import annotations
 
 import argparse
 import pathlib
+import signal
 import subprocess
 
 
 def main():
+    # A backgrounded launch (as the web GUI always uses) has SIGINT set to
+    # SIG_IGN before exec by the shell; Python respects an inherited SIG_IGN
+    # and won't otherwise install its own handler. Reset explicitly so Stop
+    # actually works -- see scripts/train.py for the full explanation. This
+    # script additionally relies on subprocess.run()'s own behavior of
+    # kill()-ing its child on any exception (including the KeyboardInterrupt
+    # this reset enables) to make sure the tensorboard child dies too, not
+    # just this wrapper process -- verified directly, see docs/webui.md.
+    signal.signal(signal.SIGINT, signal.default_int_handler)
     parser = argparse.ArgumentParser()
     parser.add_argument("--name", action="append", default=[],
                          help="Dreamer run name under --logdir; repeat to compare multiple")

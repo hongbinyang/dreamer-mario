@@ -103,3 +103,60 @@ def test_is_run_active_false_when_no_jobs_for_that_name(tmp_path):
                           name="other-run", kind="train", log_path=tmp_path / "job.log")
     assert jobs.is_run_active("nonexistent-run") is False
     assert _wait_until_dead(record["job_id"])  # don't leave it running past the test
+
+
+def test_delete_job_record_removes_the_registry_file(tmp_path):
+    record = jobs.launch([sys.executable, "-c", "pass"], name="x", kind="evaluate",
+                          log_path=tmp_path / "job.log")
+    assert _wait_until_dead(record["job_id"])
+    assert jobs.delete_job_record(record["job_id"]) is True
+    assert jobs.get_job(record["job_id"]) is None
+
+
+def test_delete_job_record_unknown_id_returns_false():
+    assert jobs.delete_job_record("does-not-exist") is False
+
+
+def test_launch_extra_is_merged_into_the_record_and_persisted(tmp_path):
+    # Used by the Compare/dashboard de-duplication feature to remember which
+    # run-set a tensorboard job covers, and its URL, across requests.
+    record = jobs.launch([sys.executable, "-c", "pass"], name="x", kind="dashboard",
+                          log_path=tmp_path / "job.log",
+                          extra={"entries": [["dreamer", "trial"]], "url": "http://x"})
+    assert record["entries"] == [["dreamer", "trial"]]
+    assert record["url"] == "http://x"
+    # Persisted to disk, not just present on the returned dict.
+    reread = jobs.get_job(record["job_id"])
+    assert reread["entries"] == [["dreamer", "trial"]]
+    assert reread["url"] == "http://x"
+
+
+def test_is_alive_true_then_false_for_a_process_this_module_never_reaped(tmp_path):
+    """Reproduces the exact situation after a scripts/webui.py restart: the
+    new process didn't spawn the still-running job, so os.waitpid() on its
+    pid raises ChildProcessError (not our child) -- liveness must still
+    resolve correctly (True while running, False once it actually exits)
+    via the os.kill(pid, 0) fallback alone. See jobs._is_alive()."""
+    import subprocess
+    # A short-lived intermediary (P1) forks a longer-lived process (P2) and
+    # exits immediately, orphaning P2 -- the OS reparents P2 to init, not to
+    # this test process, exactly like an already-launched job surviving a
+    # webui restart.
+    launcher = subprocess.Popen(
+        [sys.executable, "-c",
+         "import os, time\n"
+         "pid = os.fork()\n"
+         "if pid == 0:\n"
+         "    time.sleep(1.5); os._exit(0)\n"
+         "else:\n"
+         "    print(pid, flush=True); os._exit(0)\n"],
+        stdout=subprocess.PIPE, text=True)
+    orphan_pid = int(launcher.stdout.readline().strip())
+    launcher.wait()  # reap P1; P2 is now parented to init, not to us
+
+    assert jobs._is_alive(orphan_pid) is True
+
+    deadline = time.time() + 3.0
+    while time.time() < deadline and jobs._is_alive(orphan_pid):
+        time.sleep(0.05)
+    assert jobs._is_alive(orphan_pid) is False

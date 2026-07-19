@@ -124,3 +124,63 @@ def test_scan_tolerates_a_corrupt_checkpoint_without_crashing(tmp_path):
     found = runs.scan()
     assert found[0]["name"] == "broken-run"
     assert found[0]["step"] is None
+
+
+def test_list_artifacts_matches_only_the_given_prefix(tmp_path):
+    run_dir = tmp_path / "runs" / "trial"
+    run_dir.mkdir(parents=True)
+    (run_dir / "eval_1-aaa.mp4").write_bytes(b"x" * 200_000)  # big enough to round to nonzero MB
+    (run_dir / "eval_1-aaa.log").write_text("episode 0: ...\n")
+    (run_dir / "dream_2-bbb.mp4").write_bytes(b"y" * 1000)
+
+    evals = runs.list_artifacts(run_dir, "eval")
+    assert len(evals) == 1
+    assert evals[0]["filename"] == "eval_1-aaa.mp4"
+    assert evals[0]["has_log"] is True
+    assert evals[0]["size_mb"] > 0
+
+    dreams = runs.list_artifacts(run_dir, "dream")
+    assert len(dreams) == 1
+    assert dreams[0]["filename"] == "dream_2-bbb.mp4"
+    assert dreams[0]["has_log"] is False  # no matching dream_2-bbb.log
+
+
+def test_list_artifacts_newest_first(tmp_path):
+    run_dir = tmp_path / "runs" / "trial"
+    run_dir.mkdir(parents=True)
+    (run_dir / "eval_1-old.mp4").write_bytes(b"x")
+    time.sleep(0.05)
+    (run_dir / "eval_2-new.mp4").write_bytes(b"x")
+
+    found = runs.list_artifacts(run_dir, "eval")
+    assert [a["filename"] for a in found] == ["eval_2-new.mp4", "eval_1-old.mp4"]
+
+
+def test_scan_artifacts_spans_every_run_name_not_just_one(tmp_path):
+    # This is the fix for the "several names" gap: a panel showing evaluate
+    # history must not require picking one run first.
+    for name in ("trial", "trial-sparse"):
+        d = tmp_path / "runs" / name
+        d.mkdir(parents=True)
+        (d / f"eval_x-{name}.mp4").write_bytes(b"x")
+
+    found = runs.scan_artifacts("evaluate")
+    assert {a["name"] for a in found} == {"trial", "trial-sparse"}
+
+
+def test_scan_artifacts_ignores_the_other_job_kind(tmp_path):
+    run_dir = tmp_path / "runs" / "trial"
+    run_dir.mkdir(parents=True)
+    (run_dir / "dream_1-x.mp4").write_bytes(b"x")
+
+    assert runs.scan_artifacts("evaluate") == []
+    assert len(runs.scan_artifacts("dream")) == 1
+
+
+def test_scan_artifacts_caps_at_20(tmp_path):
+    run_dir = tmp_path / "runs" / "trial"
+    run_dir.mkdir(parents=True)
+    for i in range(25):
+        (run_dir / f"eval_{i}-x.mp4").write_bytes(b"x")
+
+    assert len(runs.scan_artifacts("evaluate")) == 20

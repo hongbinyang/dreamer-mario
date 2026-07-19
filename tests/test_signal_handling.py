@@ -67,3 +67,44 @@ def test_train_overrides_an_inherited_sigint_ignore(tmp_path):
     finally:
         if proc.poll() is None:
             proc.kill()
+
+
+def test_dashboard_overrides_an_inherited_sigint_ignore_and_kills_tensorboard_child(tmp_path):
+    """Found while testing the web GUI's Compare 'Stop' button: dashboard.py
+    was missed from the original SIGINT-reset fix (it isn't one of
+    train.py/evaluate.py/dream.py/ppo_baseline.py), so a dashboard job
+    launched by the GUI (itself typically backgrounded) was permanently
+    immune to Stop -- and even after resetting SIGINT the same way, the
+    *tensorboard* process dashboard.py spawns via a blocking subprocess.run()
+    call needed checking too, since killing the wrapper alone wouldn't be
+    enough. Verified directly: subprocess.run()'s own kill()-on-exception
+    behavior (documented in dashboard.py's comment) already takes care of
+    the child once the KeyboardInterrupt this reset enables actually fires."""
+    run_dir = tmp_path / "runs" / "trial"
+    run_dir.mkdir(parents=True)
+    port = 61987
+    cmd = [sys.executable, "scripts/dashboard.py", "--name", "trial",
+           "--logdir", str(tmp_path / "runs"), "--port", str(port)]
+    log_path = tmp_path / "dashboard.log"
+    with open(log_path, "wb") as log:
+        proc = subprocess.Popen(cmd, stdout=log, stderr=subprocess.STDOUT,
+                                 cwd=str(REPO_ROOT), preexec_fn=_ignore_sigint)
+    try:
+        time.sleep(2)  # let tensorboard actually bind and start serving
+        proc.send_signal(signal.SIGINT)
+        try:
+            proc.wait(timeout=8)
+        except subprocess.TimeoutExpired:
+            pytest.fail(
+                "dashboard.py did not respond to SIGINT within 8s when launched with an "
+                "inherited SIG_IGN disposition -- see this test's docstring")
+        time.sleep(0.5)
+        still_listening = subprocess.run(
+            ["ps", "aux"], capture_output=True, text=True
+        ).stdout
+        assert f"--port {port}" not in still_listening, (
+            "dashboard.py exited but its tensorboard child is still running -- "
+            "Stop must kill both, not just the wrapper")
+    finally:
+        if proc.poll() is None:
+            proc.kill()

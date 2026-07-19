@@ -59,13 +59,17 @@ def new_job_id() -> str:
 
 
 def launch(cmd: list[str], *, name: str, kind: str, log_path: pathlib.Path,
-           cwd: pathlib.Path | None = None, job_id: str | None = None) -> dict:
+           cwd: pathlib.Path | None = None, job_id: str | None = None,
+           extra: dict | None = None) -> dict:
     """Starts cmd detached (nohup/disown-equivalent), stdout+stderr to
     log_path. cwd matters: train.py/evaluate.py/etc. resolve --config and
     similar relative paths against their runtime working directory, not
     their own file location, so callers should pass the repo root
     explicitly rather than relying on whatever CWD this process happens to
-    have. Returns the job record (see list_jobs)."""
+    have. extra is merged into the saved record as-is -- e.g. the dashboard
+    job kind stores {"entries": [...]} there to de-duplicate future Compare
+    requests against the exact same run-set. Returns the job record (see
+    list_jobs)."""
     log_path.parent.mkdir(parents=True, exist_ok=True)
     with open(log_path, "wb") as log_file:
         proc = subprocess.Popen(
@@ -78,9 +82,10 @@ def launch(cmd: list[str], *, name: str, kind: str, log_path: pathlib.Path,
         "pid": proc.pid,
         "cmd": cmd,
         "name": name,
-        "kind": kind,  # "train" | "ppo" | "evaluate" | "dream"
+        "kind": kind,  # "train" | "ppo" | "evaluate" | "dream" | "dashboard"
         "log_path": str(log_path),
         "started_at": time.time(),
+        **(extra or {}),
     }
     _registry_path(job_id).write_text(json.dumps(record))
     return record
@@ -116,6 +121,19 @@ def stop(job_id: str) -> bool:
     if not record or not record["alive"]:
         return False
     os.kill(record["pid"], signal.SIGINT)
+    return True
+
+
+def delete_job_record(job_id: str) -> bool:
+    """Removes a job's registry entry only -- never touches the process
+    (call stop() first if it might still be alive) or any output files it
+    produced. Used when deleting a finished evaluate/dream artifact, so the
+    now-pointless registry entry doesn't linger and get re-surfaced as an
+    "orphan" the next time its (now-deleted) video is looked for."""
+    p = _registry_path(job_id)
+    if not p.exists():
+        return False
+    p.unlink()
     return True
 
 

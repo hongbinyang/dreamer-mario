@@ -78,3 +78,42 @@ def scan(logdir: str = "runs", logdir_ppo: str = "runs_ppo") -> list[dict]:
     if root_ppo.exists():
         out += [_run_info(d, "ppo") for d in root_ppo.iterdir() if d.is_dir()]
     return sorted(out, key=lambda r: r["mtime"], reverse=True)
+
+
+_ARTIFACT_PREFIX = {"evaluate": "eval", "dream": "dream"}
+
+
+def list_artifacts(run_dir: pathlib.Path, prefix: str) -> list[dict]:
+    """eval_*.mp4 / dream_*.mp4 files directly under one run's directory,
+    each paired with a same-stem .log if one happens to exist (true for
+    anything webui/app.py's evaluate/dream routes produced; not guaranteed
+    for a file placed there by a plain terminal invocation). Newest first."""
+    out = []
+    for video in run_dir.glob(f"{prefix}_*.mp4"):
+        log = video.with_suffix(".log")
+        out.append({
+            "filename": video.name,
+            "mtime": video.stat().st_mtime,
+            "size_mb": round(video.stat().st_size / 1e6, 1),
+            "has_log": log.exists(),
+        })
+    return sorted(out, key=lambda a: a["mtime"], reverse=True)
+
+
+def scan_artifacts(job_kind: str, logdir: str = "runs") -> list[dict]:
+    """eval_*/dream_* artifacts across every run directory, each tagged with
+    its run name, newest first, capped at 20 -- older ones stay on disk,
+    just not listed, so a panel showing this doesn't grow unbounded after
+    heavy use across several runs."""
+    prefix = _ARTIFACT_PREFIX[job_kind]
+    root = pathlib.Path(logdir)
+    out = []
+    if root.exists():
+        for d in root.iterdir():
+            if not d.is_dir():
+                continue
+            for artifact in list_artifacts(d, prefix):
+                artifact["name"] = d.name
+                out.append(artifact)
+    out.sort(key=lambda a: a["mtime"], reverse=True)
+    return out[:20]
