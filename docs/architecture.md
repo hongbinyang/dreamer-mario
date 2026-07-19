@@ -25,6 +25,7 @@ dreamer-mario/
 │   ├── monitoring.md          dashboard + cleanup: watching and managing runs
 │   ├── evaluation.md          evaluating a checkpoint, generating the dream showcase video
 │   ├── baselines.md           the PPO comparison run
+│   ├── webui.md               the browser GUI: setup, page walkthrough, GUI action -> CLI command
 │   ├── testing.md             the unit test suite and the smoke test
 │   ├── training_pipeline.md   step-by-step collect → world model → imagination loop
 │   ├── design_world_model.md  why RSSM / discrete latents / symlog-twohot / KL balancing
@@ -48,16 +49,29 @@ dreamer-mario/
 │   └── dream.py                the real-vs-imagined showcase video
 ├── baselines/                 alternative algorithms for comparison, not part of Dreamer itself
 │   └── ppo_baseline.py         stable-baselines3 PPO on the identical env wrapper
-└── runs/                      one subdirectory per --name: ckpt.pt, tfevents, GIFs — gitignored
+├── webui/                     browser GUI — thin HTTP layer, shells out to scripts/ for
+│   │                          everything; see docs/webui.md
+│   ├── app.py                  Flask app factory + routes
+│   ├── runs.py                  scans runs/ + runs_ppo/ into status dicts
+│   ├── jobs.py                   file-based job registry: launch/track/stop subprocesses
+│   ├── templates/index.html      single-page dashboard shell
+│   └── static/                   app.js (polling + form submission), style.css
+├── runs/                      one subdirectory per --name: ckpt.pt, tfevents, GIFs — gitignored
+├── runs_ppo/                  PPO baseline output, one subdirectory per --name — gitignored
+└── webui_state/                job registry for the web GUI (webui/jobs.py) — gitignored,
+                                invisible to cleanup.py/dashboard.py's runs/ scans
 ```
 
 `dreamer/` is the reusable core: nothing in it parses CLI args, touches `sys.path`, or writes
 files. `scripts/` holds thin entry points that do the argument parsing and I/O and then call into
 `dreamer/`. `baselines/` is deliberately separate from `dreamer/` — it's a different algorithm
 family (model-free) sharing only the env wrapper, so it has no reason to live inside the Dreamer
-package. This split is what makes the project extensible: a second world-model variant would be a
-new module in `dreamer/` plus a new script in `scripts/`; a second baseline (DQN, say) is a new
-file in `baselines/`; a second environment would be a new file in `dreamer/envs/`.
+package. `webui/` is a management layer *on top of* `scripts/`/`baselines/`, not a reimplementation
+of them — every GUI action launches the same CLI entry point a terminal user would run (see
+[webui.md](webui.md)). This split is what makes the project extensible: a second world-model
+variant would be a new module in `dreamer/` plus a new script in `scripts/`; a second baseline
+(DQN, say) is a new file in `baselines/`; a second environment would be a new file in
+`dreamer/envs/`.
 
 ## Where each paper idea lives in code
 

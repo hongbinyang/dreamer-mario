@@ -5,10 +5,14 @@ __pycache__/
 
 # Training outputs (checkpoints, logs, videos) — large binaries, regenerable
 runs/
+runs_ppo/
 *.pt
 *.pth
 *.mp4
 *.gif
+
+# Web GUI job-tracking state (pidfiles, job metadata) — see webui/jobs.py
+webui_state/
 
 # OS
 .DS_Store

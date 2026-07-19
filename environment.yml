@@ -21,3 +21,5 @@ dependencies:
       # optional, only for the PPO baseline:
       # - stable-baselines3
       # - gymnasium
+      # optional, only for the web GUI:
+      # - flask

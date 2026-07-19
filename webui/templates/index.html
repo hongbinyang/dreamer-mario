@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>dreamer-mario</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header>
+  <h1>dreamer-mario</h1>
+  <p class="subtitle">Every action here shells out to the same CLI you'd run in a terminal &mdash;
+    see the command line shown for each job below, or <a href="https://github.com/hongbinyang/dreamer-mario/blob/main/docs/webui.md" target="_blank">docs/webui.md</a>.</p>
+</header>
+
+<section id="runs-section">
+  <h2>Runs</h2>
+  <table id="runs-table">
+    <thead>
+      <tr>
+        <th></th><th>Name</th><th>Kind</th><th>Step</th><th>best_x</th><th>flags</th>
+        <th>Size</th><th>Status</th><th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="runs-tbody"></tbody>
+  </table>
+  <p id="runs-empty" class="empty-note" hidden>No runs yet &mdash; start one below.</p>
+</section>
+
+<section id="start-section">
+  <h2>Start a run</h2>
+  <div class="two-col">
+    <form id="train-form" class="panel">
+      <h3>Start Dreamer training</h3>
+      <label>Name <input name="name" required placeholder="trial"></label>
+      <label>total_steps <input name="total_steps" type="number" placeholder="1000000"></label>
+      <label>entropy_coef <input name="entropy_coef" type="text" placeholder="3e-4"></label>
+      <label class="checkbox"><input name="sparse_reward" type="checkbox"> sparse_reward</label>
+      <label>device
+        <select name="device">
+          <option value="">auto</option>
+          <option value="cpu">cpu</option>
+          <option value="mps">mps</option>
+          <option value="cuda">cuda</option>
+          <option value="tpu">tpu</option>
+        </select>
+      </label>
+      <label>Additional --set overrides (one per line)
+        <textarea name="set_text" rows="3" placeholder="train.train_every=32"></textarea>
+      </label>
+      <button type="submit">Start training</button>
+    </form>
+
+    <form id="ppo-form" class="panel">
+      <h3>Start PPO baseline</h3>
+      <p class="hint">For comparison against a Dreamer run of the same name.</p>
+      <label>Name <input name="name" required placeholder="trial"></label>
+      <label>ppo.total_steps <input name="total_steps" type="number" placeholder="1000000"></label>
+      <label>ppo.ent_coef <input name="ent_coef" type="text" placeholder="0.02"></label>
+      <label class="checkbox"><input name="sparse_reward" type="checkbox"> sparse_reward</label>
+      <label>device
+        <select name="device">
+          <option value="">auto (cpu on this stack -- see docs/baselines.md)</option>
+          <option value="cpu">cpu</option>
+          <option value="cuda">cuda</option>
+        </select>
+      </label>
+      <label>Additional --set overrides (one per line)
+        <textarea name="set_text" rows="3" placeholder="ppo.n_steps=1024"></textarea>
+      </label>
+      <button type="submit">Start PPO baseline</button>
+    </form>
+  </div>
+</section>
+
+<section id="eval-dream-section">
+  <h2>Evaluate &amp; Dream</h2>
+  <div class="two-col">
+    <form id="evaluate-form" class="panel">
+      <h3>Evaluate</h3>
+      <label>Run <select name="name" class="dreamer-run-select" required></select></label>
+      <label>Episodes <input name="episodes" type="number" value="5"></label>
+      <label class="checkbox"><input name="video" type="checkbox" checked> record video</label>
+      <label>Additional --set overrides (one per line)
+        <textarea name="set_text" rows="2"></textarea>
+      </label>
+      <button type="submit">Evaluate</button>
+    </form>
+
+    <form id="dream-form" class="panel">
+      <h3>Dream</h3>
+      <label>Run <select name="name" class="dreamer-run-select" required></select></label>
+      <label>context <input name="context" type="number" value="8"></label>
+      <label>horizon <input name="horizon" type="number" value="56"></label>
+      <label>upscale <input name="upscale" type="number" value="4"></label>
+      <label>fps <input name="fps" type="number" placeholder="auto: real-time"></label>
+      <label>Additional --set overrides (one per line)
+        <textarea name="set_text" rows="2"></textarea>
+      </label>
+      <button type="submit">Dream</button>
+    </form>
+  </div>
+  <p class="hint">Results (including the video, once ready) appear under Active Jobs below.</p>
+</section>
+
+<section id="compare-section">
+  <h2>Compare</h2>
+  <p class="hint">Pick 2+ runs from the checkboxes in the Runs table above, Dreamer and/or PPO
+    baseline mixed freely, then compare. Opens a TensorBoard instance in a new tab; matching
+    <code>episode/best_x</code>/<code>episode/flags</code> tags overlay directly since
+    <code>ppo_baseline.py</code>'s metrics callback logs them under the same names.</p>
+  <button id="compare-btn">Compare selected</button>
+  <span id="compare-status"></span>
+</section>
+
+<section id="jobs-section">
+  <h2>Active jobs</h2>
+  <div id="jobs-list"></div>
+</section>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

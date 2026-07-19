@@ -13,3 +13,5 @@ pytest
 # Optional, PPO baseline only:
 # stable-baselines3
 # gymnasium
+# Optional, web GUI only:
+# flask

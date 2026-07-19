@@ -1,0 +1,87 @@
+:root {
+  color-scheme: light dark;
+  --border: #d0d0d0;
+  --muted: #666;
+  --bg-panel: rgba(127, 127, 127, 0.06);
+  --running: #1a7f37;
+  --idle: #666;
+}
+
+body {
+  font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  line-height: 1.4;
+}
+
+header .subtitle { color: var(--muted); font-size: 0.9rem; }
+
+section {
+  margin: 2rem 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+h2 { margin-bottom: 0.5rem; }
+.hint { color: var(--muted); font-size: 0.9rem; }
+
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+th, td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--border); }
+
+.badge {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 1rem;
+  font-size: 0.8rem;
+}
+.badge-running { background: var(--running); color: white; }
+.badge-idle { background: var(--idle); color: white; }
+
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+@media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+}
+.panel h3 { margin-top: 0; }
+.panel label { display: block; margin: 0.5rem 0; font-size: 0.9rem; }
+.panel label.checkbox { display: flex; align-items: center; gap: 0.4rem; }
+.panel input[type="text"], .panel input[type="number"], .panel select, .panel textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.3rem;
+  margin-top: 0.2rem;
+}
+.panel textarea { font-family: ui-monospace, monospace; font-size: 0.85rem; }
+.panel button, #compare-btn { margin-top: 0.5rem; padding: 0.4rem 1rem; cursor: pointer; }
+
+.empty-note { color: var(--muted); font-style: italic; }
+
+.job {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.6rem 0.8rem;
+  margin-bottom: 0.6rem;
+}
+.job-head { display: flex; align-items: center; gap: 0.6rem; }
+.job-cmd {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--muted);
+  overflow-x: auto;
+  white-space: pre;
+  margin-top: 0.3rem;
+}
+.job-log {
+  max-height: 300px;
+  overflow-y: auto;
+  background: var(--bg-panel);
+  padding: 0.5rem;
+  font-size: 0.8rem;
+  white-space: pre-wrap;
+}
+.job video { max-width: 100%; margin-top: 0.5rem; border-radius: 6px; }

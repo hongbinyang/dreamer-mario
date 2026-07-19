@@ -63,3 +63,10 @@ ppo:
   ent_coef: 0.02               # bumped from SB3's stock 0.01 default, same spirit as the
                                 # entropy_coef fix that broke Dreamer's exploration plateau --
                                 # not empirically validated for PPO the same way, adjust freely
+
+webui:
+  # scripts/webui.py -- see docs/webui.md. host defaults to localhost only;
+  # there is no authentication, so think twice before setting it to
+  # 0.0.0.0 (the GUI can execute training runs and delete files).
+  host: 127.0.0.1
+  port: 8000

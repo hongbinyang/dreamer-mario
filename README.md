@@ -17,6 +17,8 @@ Layout of the showcase video produced by `scripts/dream.py`:
 - [**Evaluation**](docs/evaluation.md) — evaluating a trained checkpoint, generating the dream
   showcase video.
 - [**Baselines**](docs/baselines.md) — the PPO comparison run.
+- [**Web GUI**](docs/webui.md) — start/stop/watch/evaluate/compare runs from a browser, a layer
+  on top of the same CLI scripts, not a replacement for them.
 - [**Testing**](docs/testing.md) — the unit test suite and the smoke test.
 - [**Training pipeline**](docs/training_pipeline.md) — step-by-step walkthrough of what happens
   inside one training step: act → replay → world-model update → imagination rollout.
@@ -93,6 +95,18 @@ python baselines/ppo_baseline.py --name trial
 Uses the identical env wrapper, so env-frame counts are directly comparable — see
 [docs/baselines.md](docs/baselines.md) for the full command reference, config keys, and measured
 throughput.
+
+## Web GUI
+
+```bash
+pip install flask   # optional, not in requirements.txt/environment.yml
+python scripts/webui.py
+```
+
+Then open `http://127.0.0.1:8000` — start/stop/watch training and PPO baseline runs, evaluate
+and dream (with the resulting video playable right in the browser), and compare runs, all backed
+by the exact same scripts above. See [docs/webui.md](docs/webui.md) for the full page walkthrough
+and a "GUI action → CLI command" table.
 
 ## Suggested experiments
 
