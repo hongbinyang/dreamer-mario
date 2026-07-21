@@ -25,6 +25,8 @@ dreamer-mario/
 │   ├── monitoring.md          dashboard + cleanup: watching and managing runs
 │   ├── evaluation.md          evaluating a checkpoint, generating the dream showcase video
 │   ├── baselines.md           the PPO comparison run
+│   ├── dreamer_vs_ppo_trial.md  worked comparison example on the trial run, chart + failure mode
+│   ├── assets/                 static images referenced by docs (e.g. the comparison chart above)
 │   ├── webui.md               the browser GUI: setup, page walkthrough, GUI action -> CLI command
 │   ├── testing.md             the unit test suite and the smoke test
 │   ├── training_pipeline.md   step-by-step collect → world model → imagination loop

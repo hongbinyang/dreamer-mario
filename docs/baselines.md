@@ -30,9 +30,16 @@ you happen to run this on a CUDA machine instead.
 ## How to compare after both have run
 
 Dreamer and PPO write TensorBoard logs to separate roots (`runs/<name>/` vs.
-`runs_ppo/<name>/PPO_1/`), so `scripts/dashboard.py` can't show both — it only looks under
-`runs/`. View them together with a plain TensorBoard call using `--logdir_spec`
-(`run_name:path` pairs, comma-separated):
+`runs_ppo/<name>/PPO_1/`). `scripts/dashboard.py` shows both together via `--ppo-name` (mixes
+freely with `--name`, and is exactly what the web GUI's Compare panel builds under the hood — see
+[webui.md](webui.md)):
+
+```bash
+python scripts/dashboard.py --name trial --ppo-name trial
+```
+
+Equivalent to a plain TensorBoard call with `--logdir_spec` (`run_name:path` pairs), if you'd
+rather not go through `dashboard.py`:
 
 ```bash
 tensorboard --logdir_spec=dreamer:runs/trial,ppo:runs_ppo/trial
@@ -51,6 +58,28 @@ lines on the *same* chart rather than needing to be read as separate, differentl
 `rollout/ep_rew_mean` are computed differently enough (different logging cadence, PPO's is a
 rolling mean over recent episodes rather than Dreamer's per-log-window mean) that they're better
 read as two separate charts, not overlaid.
+
+For a full worked example of reading this comparison — including the failure mode below and what
+the actual result looked like — see [dreamer_vs_ppo_trial.md](dreamer_vs_ppo_trial.md).
+
+## A real failure mode: PPO policy collapse, and why `ent_coef` matters
+
+Running `ppo_baseline.py --name trial` with the *previous* default (`ppo.ent_coef=0.02`) collapsed
+into a single repeated dead-end trajectory **twice in a row**, in two completely independent runs:
+`episode/best_x`, `episode/flags`, `rollout/ep_rew_mean`, and `rollout/ep_len_mean` all went
+*perfectly* flat (not just low — bit-for-bit identical across hundreds of thousands of steps),
+meaning the policy had converged to a fully deterministic behavior that dies at the same spot every
+single episode, with no exploration left to ever escape it. `episode/flags` staying at `0` for a
+while early in training is normal (Dreamer's own curve does this too, see
+[monitoring.md](monitoring.md)) — a value that's *exactly* constant for an extended stretch,
+across multiple logged metrics simultaneously, is the actual signature of collapse, not just slow
+progress.
+
+`ppo.ent_coef=0.05` (the current default) was the first value that avoided this on the same setup,
+completing the level 8 times over a full `1000000`-step run instead of 0. This isn't a rigorously
+swept/validated value — same caveat as before — just confirmed better than `0.02` on this one task.
+If you hit the same flatline symptom, try raising `ent_coef` further via
+`--set ppo.ent_coef=0.1` (or higher) before assuming something else is broken.
 
 ## Options
 
@@ -71,7 +100,7 @@ read as two separate charts, not overlaid.
 | `n_steps` | `512` | SB3's rollout buffer size (env steps collected per policy update). |
 | `batch_size` | `256` | Minibatch size for each PPO update epoch. |
 | `learning_rate` | `2.5e-4` | Adam learning rate. |
-| `ent_coef` | `0.02` | Entropy bonus coefficient. Bumped from SB3's stock default of `0.01`, in the same spirit as the fix that broke Dreamer's exploration plateau (see [training.md](training.md)) — **not** empirically validated for PPO the same way that Dreamer value was, so treat it as a reasonable starting point rather than a proven number. Adjust freely via `--set ppo.ent_coef=...`. |
+| `ent_coef` | `0.05` | Entropy bonus coefficient. Bumped from SB3's stock default of `0.01` — `0.02` (this value's own former default) let the policy collapse into a single repeated dead-end trajectory twice in a row on the `trial` comparison; `0.05` was the first value that avoided it, see "A real failure mode" above. Still **not** a rigorously swept/validated value, just confirmed better than the alternatives tried so far — treat it as a starting point, and adjust freely via `--set ppo.ent_coef=...`. |
 
 Not part of the named-run system used for Dreamer runs elsewhere ([training.md](training.md),
 [monitoring.md](monitoring.md), [evaluation.md](evaluation.md)) — `scripts/dashboard.py` and

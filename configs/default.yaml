@@ -60,9 +60,11 @@ ppo:
   n_steps: 512
   batch_size: 256
   learning_rate: 2.5e-4
-  ent_coef: 0.02               # bumped from SB3's stock 0.01 default, same spirit as the
-                                # entropy_coef fix that broke Dreamer's exploration plateau --
-                                # not empirically validated for PPO the same way, adjust freely
+  ent_coef: 0.05               # bumped from SB3's stock 0.01 -- 0.02 (this value's own former
+                                # default) let the policy collapse into a single repeated dead-end
+                                # trajectory twice in a row on the "trial" comparison; 0.05 was the
+                                # first value that avoided it. See docs/baselines.md and
+                                # docs/dreamer_vs_ppo_trial.md for the actual run data.
 
 webui:
   # scripts/webui.py -- see docs/webui.md. host defaults to localhost only;

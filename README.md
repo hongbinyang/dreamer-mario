@@ -17,6 +17,9 @@ Layout of the showcase video produced by `scripts/dream.py`:
 - [**Evaluation**](docs/evaluation.md) — evaluating a trained checkpoint, generating the dream
   showcase video.
 - [**Baselines**](docs/baselines.md) — the PPO comparison run.
+- [**Dreamer vs. PPO case study**](docs/dreamer_vs_ppo_trial.md) — a worked example of reading the
+  comparison on this project's own `trial` run, chart included, plus a real PPO policy-collapse
+  failure mode and how to spot it.
 - [**Web GUI**](docs/webui.md) — start/stop/watch/evaluate/compare runs from a browser, a layer
   on top of the same CLI scripts, not a replacement for them.
 - [**Testing**](docs/testing.md) — the unit test suite and the smoke test.
