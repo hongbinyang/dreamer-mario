@@ -10,6 +10,8 @@ runs_ppo/
 *.pth
 *.mp4
 *.gif
+# ...except committed showcase assets referenced by README/docs (not regenerable training output)
+!docs/assets/*.gif
 
 # Web GUI job-tracking state (pidfiles, job metadata) — see webui/jobs.py
 webui_state/
